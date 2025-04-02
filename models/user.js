@@ -22,8 +22,6 @@ export const userSchema = mongoose.Schema({
     gender: { type: String, enum: ['male', 'female', 'else'], required: true },
     profilePicture: { type: String, default: '' },
     tags: [minimalTag],
-    // posts: [minimalPost],
-    // achievements: [minimalAchievement]
 })
 
 

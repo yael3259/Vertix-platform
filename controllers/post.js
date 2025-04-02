@@ -4,6 +4,24 @@ import { postModel } from "../models/post.js";
 
 
 
+
+// הצגת כל הפוסטים
+export const getAllPosts = async (req, res, next) => {
+    let page = parseInt(req.query.page) || 1;
+    let perPage = parseInt(req.query.perPage) || 12;
+
+    try {
+        let allPosts = await postModel.find()
+            .skip((page - 1) * perPage)
+            .limit(perPage);
+
+        return res.json(allPosts);
+    } catch (err) {
+        return res.status(400).json({ type: "invalid operation", message: "Could not get posts" });
+    }
+}
+
+
 // הוספת פוסט
 export const addPost = async (req, res) => {
     let { userId, category, content, backgroundColor, likes, comments } = req.body;
@@ -28,4 +46,32 @@ export const addPost = async (req, res) => {
 
 
 
-// הוספת לייק לפוסט
+// הוספת/ הסרת לייק בפוסט
+export const toggleLikePost = async (req, res) => {
+    const { postId } = req.params;
+    const { userId } = req.body;
+
+    if (!mongoose.isValidObjectId(postId))
+        return res.status(400).json({ message: "Invalid post ID" });
+
+    try {
+        const post = await postModel.findById(postId);
+        if (!post)
+            return res.status(404).json({ message: "Post not found" });
+
+        const userIndex = post.usersLiked.indexOf(userId);
+        if (userIndex === -1) {
+            post.usersLiked.push(userId);
+            post.likes += 1;
+        } else {
+            post.usersLiked.splice(userIndex, 1);
+            post.likes -= 1;
+        }
+
+        await post.save();
+        return res.json({ likes: post.likes });
+
+    } catch (error) {
+        return res.status(500).json({ type: "server error", message: "faild to toggle like" });
+    }
+};
