@@ -25,5 +25,5 @@ app.use("/domain/api/post", postRouter);
 config();
 connectToDb();
 
-const PORT = process.env.PORT || 6000
+const PORT = process.env.PORT || 5000
 app.listen(PORT, ()=> {`server running on port ${PORT}`})

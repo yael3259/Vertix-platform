@@ -1,8 +1,11 @@
 import mongoose from "mongoose";
 import Joi from 'joi';
 import jwt from 'jsonwebtoken';
-// import { mail_gender, female_gender, else_gender } from "./files/"
+// import { mail_gender, female_gender, else_gender } from "./files"
 
+
+
+let defualtPic = "https://cdn-icons-png.freepik.com/256/10796/10796964.png?ga=GA1.1.1754982332.1740749915&semt=ais_hybrid";
 
 
 // סכמת תג
@@ -20,7 +23,7 @@ export const userSchema = mongoose.Schema({
     role: { type: String, default: "USER" },
     enterDate: { type: Date, default: Date.now() },
     gender: { type: String, enum: ['male', 'female', 'else'], required: true },
-    profilePicture: { type: String, default: '' },
+    profilePicture: { type: String, default: defualtPic },
     tags: [minimalTag],
 })
 

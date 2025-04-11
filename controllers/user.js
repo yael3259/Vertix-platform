@@ -167,7 +167,7 @@ export const updateUserDetails = async (req, res) => {
     const { userId } = req.params;
     let { userName, nickname, email, password, gender, profilePicture } = req.body;
 
-    if (!mongoose.isValidObjectId(id))
+    if (!mongoose.isValidObjectId(userId))
         return res.status(400).json({ type: "not valid id", massage: "id is in not the right format" });
 
     try {
@@ -190,3 +190,19 @@ export const updateUserDetails = async (req, res) => {
         res.status(400).json({ type: "invalid operation", massage: "Could not update user details" });
     }
 }
+
+
+// המלצת מעקב אחרי משתמשים רנדומליים
+export const getRandomUsers = async (req, res) => {
+    try {
+        const randomUsers = await userModel.aggregate([
+            { $sample: { size: 3 } },
+            { $project: { password: 0 } }
+        ]);
+
+        return res.json(randomUsers);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ type: "invalid operation", massage: "Could not get random users" });
+    }
+};

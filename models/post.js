@@ -20,6 +20,7 @@ export const postSchema = mongoose.Schema({
     postId: { type: mongoose.Schema.Types.ObjectId, ref: 'Posts' },
     category: { type: String, required: true },
     content: { type: String, required: true },
+    imagePost: { type: String, default: '' },
     backgroundColor: { type: String, default: '#FFFFFF' },
     likes: { type: Number, default: 0 },
     comments: [commentSchema],

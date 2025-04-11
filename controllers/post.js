@@ -8,7 +8,7 @@ import { postModel } from "../models/post.js";
 // הצגת כל הפוסטים
 export const getAllPosts = async (req, res, next) => {
     let page = parseInt(req.query.page) || 1;
-    let perPage = parseInt(req.query.perPage) || 12;
+    let perPage = parseInt(req.query.perPage);
 
     try {
         let allPosts = await postModel.find()
@@ -23,27 +23,63 @@ export const getAllPosts = async (req, res, next) => {
 
 
 // הוספת פוסט
+// export const addPost = async (req, res) => {
+//     let { userId, category, content, imagePost, backgroundColor, likes, comments } = req.body;
+
+//     if (!category || !content)
+//         return res.status(400).json({ type: "missing parameters", message: "enter category and content" })
+
+//     try {
+//         let newPost = new postModel({
+//             userId: req.user?._id || null,
+//             category, content, imagePost, backgroundColor, likes, comments, postingDate: new Date()
+//         })
+
+//         await newPost.save();
+
+//         return res.json(newPost);
+//     }
+//     catch(err){
+//         return res.status(500).json({ type: "server error", message: "Failed to add post" });
+//     }
+// }
+
 export const addPost = async (req, res) => {
-    let { userId, category, content, backgroundColor, likes, comments } = req.body;
+    let { category, content, imagePost, backgroundColor, likes, comments } = req.body;
 
     if (!category || !content)
-        return res.status(400).json({ type: "missing parameters", message: "enter category and content" })
+        return res.status(400).json({ type: "missing parameters", message: "enter category and content" });
 
     try {
+        let jimagePost = '';
+        if (req.imagePost) {
+            jimagePost = imagePost;
+        }
+
+        if (req.file) {
+            const base64Image = req.file.buffer.toString('base64');
+            const mimeType = req.file.mimetype;
+            jimagePost = `data:${mimeType};base64,${base64Image}`;
+        }
+
         let newPost = new postModel({
             userId: req.user?._id || null,
-            category, content, backgroundColor, likes, comments, postingDate: new Date()
-        })
+            category,
+            content,
+            imagePost: jimagePost,
+            backgroundColor,
+            likes,
+            comments,
+            postingDate: new Date()
+        });
 
         await newPost.save();
-
         return res.json(newPost);
-    }
-    catch(err){
+    } catch (err) {
+        console.log(err);
         return res.status(500).json({ type: "server error", message: "Failed to add post" });
     }
-}
-
+};
 
 
 // הוספת/ הסרת לייק בפוסט
