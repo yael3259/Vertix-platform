@@ -4,32 +4,25 @@ import Joi from 'joi';
 
 
 
-
-// סכמת תגובה
-export const commentSchema = mongoose.Schema({
-    // commentId: { type: mongoose.Schema.Types.ObjectId, default: mongoose.Types.ObjectId },
+const commentSchema = new mongoose.Schema({
     text: { type: String, required: true },
     image: { type: String },
-    date: { type: Date },
+    commentDate: { type: Date, default: Date.now },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' }
-});
+}, { _id: true });
 
 
-// סכמת פוסט
-export const postSchema = mongoose.Schema({
-    postId: { type: mongoose.Schema.Types.ObjectId, ref: 'Posts' },
+
+export const postSchema = new mongoose.Schema({
     category: { type: String, required: true },
     content: { type: String, required: true },
     imagePost: { type: String, default: '' },
     backgroundColor: { type: String, default: '#FFFFFF' },
     likes: { type: Number, default: 0 },
     comments: [commentSchema],
-    postingDate: { type: Date },
+    postingDate: { type: Date, default: Date.now },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' }
 });
-
-
-
 
 
 export const postValidator = (post) => {

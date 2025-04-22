@@ -22,7 +22,8 @@ export const userSchema = mongoose.Schema({
     password: {type: String, required: true},
     role: { type: String, default: "USER" },
     enterDate: { type: Date, default: Date.now() },
-    gender: { type: String, enum: ['male', 'female', 'else'], required: true },
+    // gender: { type: String, enum: ['male', 'female', 'else'], required: true },
+    gender: { type: String, required: true },
     profilePicture: { type: String, default: defualtPic },
     tags: [minimalTag],
 })

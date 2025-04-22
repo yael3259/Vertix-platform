@@ -18,49 +18,132 @@ export const getAllUsers = async (req, res) => {
 
 
 // רישום משתמש
+// export const addUser = async (req, res) => {
+//     let { userName, nickname, email, password, gender, profilePicture } = req.body;
+
+//     if (!userName || !email || !password || !gender)
+//         return res.status(400).json({ type: "missing parameters", message: "enter userName, email, password and gender" })
+
+//     try {
+//         const sameUser = await userModel.findOne({ email: email })
+
+//         if (sameUser)
+//             return res.status(409).json({ type: "same user", message: "user with such email already exist" });
+
+//         // שינוי תפקיד משתמש
+//         const ChangingUserStatus = (userName) => {
+
+//             if (userName.startsWith(process.env.ROLE_CODE)) {
+//                 const newUserName = userName.replace(process.env.ROLE_CODE, '').trim();
+//                 console.log("After removing ROLE_CODE:", newUserName);
+//                 return { userName: newUserName, role: "ADMIN" };
+//             }
+//             return { userName, role: "USER" };
+//         };
+//         const { userName: updatedUserName, role } = ChangingUserStatus(userName);
+
+//         // הצפנת הסיסמה
+//         let hashedPassword = await bcrypt.hash(password, 15);
+
+//         let newUser = new userModel({ userName: updatedUserName, nickname, email, password: hashedPassword, role, gender, profilePicture, enterDate: new Date() });
+//         console.log(newUser.enterDate);
+
+//         await newUser.save();
+
+//         let token = generateToken(newUser._id, newUser.userName, newUser.gender);
+
+//         return res.json({
+//             userId: newUser._id, userName: newUser.userName, nickname: newUser.nickname, role: newUser.role,
+//             token, email: newUser.email, gender: newUser.gender, profilePicture: newUser.profilePicture, enterDate: newUser.enterDate
+//         });
+//     }
+//     catch (err) {
+//         return res.status(400).json({ type: "invalid operations", message: "Could not add user" });
+//     }
+// }
 export const addUser = async (req, res) => {
     let { userName, nickname, email, password, gender, profilePicture } = req.body;
 
-    if (!userName || !email || !password || !gender)
-        return res.status(400).json({ type: "missing parameters", message: "enter userName, email, password and gender" })
+    console.log("📥 בקשה התקבלה עם הנתונים:", { userName, nickname, email, password, gender, profilePicture });
+
+    // בדיקת שדות חובה
+    if (!userName || !email || !password || !gender) {
+        console.log("❌ שדות חסרים:", { userName, email, password, gender });
+        return res.status(400).json({
+            type: "missing parameters",
+            message: "enter userName, email, password and gender"
+        });
+    }
 
     try {
-        const sameUser = await userModel.findOne({ email: email })
+        // בדיקת משתמש קיים
+        const sameUser = await userModel.findOne({ email: email });
+        if (sameUser) {
+            console.log("⚠️ משתמש כבר קיים עם האימייל הזה:", email);
+            return res.status(409).json({
+                type: "same user",
+                message: "user with such email already exist"
+            });
+        }
 
-        if (sameUser)
-            return res.status(409).json({ type: "same user", message: "user with such email already exist" });
-
-        // שינוי תפקיד משתמש
+        // שינוי תפקיד לפי קוד
         const ChangingUserStatus = (userName) => {
-
             if (userName.startsWith(process.env.ROLE_CODE)) {
                 const newUserName = userName.replace(process.env.ROLE_CODE, '').trim();
-                console.log("After removing ROLE_CODE:", newUserName);
+                console.log("🔐 קוד תפקיד מזוהה - הגדרת ADMIN:", newUserName);
                 return { userName: newUserName, role: "ADMIN" };
             }
             return { userName, role: "USER" };
         };
+
         const { userName: updatedUserName, role } = ChangingUserStatus(userName);
+        console.log("👤 שם משתמש לאחר שינוי סטטוס:", updatedUserName, "| תפקיד:", role);
 
-        // הצפנת הסיסמה
+        // הצפנת סיסמה
         let hashedPassword = await bcrypt.hash(password, 15);
+        console.log("🔑 סיסמה הוצפנה בהצלחה");
 
-        let newUser = new userModel({ userName: updatedUserName, nickname, email, password: hashedPassword, role, gender, profilePicture, enterDate: new Date() });
-        console.log(newUser.enterDate);
+        // יצירת משתמש חדש
+        let newUser = new userModel({
+            userName: updatedUserName,
+            nickname,
+            email,
+            password: hashedPassword,
+            role,
+            gender,
+            profilePicture,
+            enterDate: new Date()
+        });
+
+        console.log("🆕 משתמש חדש לפני שמירה למסד:", newUser);
 
         await newUser.save();
+        console.log("✅ משתמש נשמר במסד נתונים");
 
+        // יצירת טוקן
         let token = generateToken(newUser._id, newUser.userName, newUser.gender);
+        console.log("🎫 טוקן נוצר בהצלחה");
 
         return res.json({
-            userId: newUser._id, userName: newUser.userName, nickname: newUser.nickname, role: newUser.role,
-            token, email: newUser.email, gender: newUser.gender, profilePicture: newUser.profilePicture, enterDate: newUser.enterDate
+            userId: newUser._id,
+            userName: newUser.userName,
+            nickname: newUser.nickname,
+            role: newUser.role,
+            token,
+            email: newUser.email,
+            gender: newUser.gender,
+            profilePicture: newUser.profilePicture,
+            enterDate: newUser.enterDate
         });
     }
     catch (err) {
-        return res.status(400).json({ type: "invalid operations", message: "Could not add user" });
+        console.error("💥 שגיאה בשרת בעת הוספת משתמש:", err);
+        return res.status(400).json({
+            type: "invalid operations",
+            message: "Could not add user"
+        });
     }
-}
+};
 
 
 // התחברות משתמש

@@ -23,27 +23,6 @@ export const getAllPosts = async (req, res, next) => {
 
 
 // הוספת פוסט
-// export const addPost = async (req, res) => {
-//     let { userId, category, content, imagePost, backgroundColor, likes, comments } = req.body;
-
-//     if (!category || !content)
-//         return res.status(400).json({ type: "missing parameters", message: "enter category and content" })
-
-//     try {
-//         let newPost = new postModel({
-//             userId: req.user?._id || null,
-//             category, content, imagePost, backgroundColor, likes, comments, postingDate: new Date()
-//         })
-
-//         await newPost.save();
-
-//         return res.json(newPost);
-//     }
-//     catch(err){
-//         return res.status(500).json({ type: "server error", message: "Failed to add post" });
-//     }
-// }
-
 export const addPost = async (req, res) => {
     let { category, content, imagePost, backgroundColor, likes, comments } = req.body;
 
@@ -111,3 +90,50 @@ export const toggleLikePost = async (req, res) => {
         return res.status(500).json({ type: "server error", message: "faild to toggle like" });
     }
 };
+
+
+// הוספת תגובה לפוסט
+export const addComment = async (req, res) => {
+    const { postId } = req.params;
+    const { text, image } = req.body;
+
+    try {
+        const post = await postModel.findById(postId);
+        if (!post)
+            return res.status(404).json({ message: "Post not found" });
+
+        const newComment = {
+            text,
+            image,
+            commentDate: new Date(),
+            userId: req.user?._id || null
+        };
+
+        post.comments.push(newComment);
+        await post.save();
+
+        console.log("התגובה נוספה בהצלחה");
+        return res.json(newComment);
+    }
+    catch (err) {
+        return res.status(500).json({ type: "server error", message: "failed to add comment", error: err.message });
+    }
+}
+
+
+// הצגת תגובות של פוסט מסויים
+export const getCommentOfPostById = async (req, res) => {
+    const { postId } = req.params;
+
+    try{
+        const post = await postModel.findById(postId);
+        if (!post)
+            return res.status(404).json({ message: "Post not found" });
+
+        return res.status(200).json({ comments: post.comments });
+    }
+
+    catch(err){
+        return res.status(500).json({ type: "server error", message: "faild to get comments" });
+    }
+}
