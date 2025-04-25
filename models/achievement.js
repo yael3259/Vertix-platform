@@ -13,6 +13,7 @@ const defaultDate = () => {
 
 // סכמת טבלת מעקב
 const trackingTableSchema = mongoose.Schema({
+    day: { type: Date, required: true },
     isMarkedToday: { type: Boolean, default: false },
     currentDay: { type: Date, default: new Date()},
     isCompleted: { type: Boolean, default: false }
@@ -28,7 +29,6 @@ export const achievementSchema = mongoose.Schema({
     category: { type: String, required: true },
     trackingTable: [trackingTableSchema],
     // userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' }
-    userId: String
 });
 
 
