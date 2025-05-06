@@ -1,6 +1,7 @@
 import express from "express";
 import { getAllPosts, addPost, toggleLikePost, addComment, getCommentOfPostById } from "../controllers/post.js";
 import multer from "multer";
+import { auth } from "../auth.js";
 
 
 
@@ -12,8 +13,7 @@ const router = express.Router();
 
 
 router.get("/", getAllPosts);
-// router.post("/", addPost);
-router.post("/", upload.single("mediaFile"), addPost);
+router.post("/", auth, upload.single("mediaFile"), addPost);
 
 // router.put("/:postId", toggleLikePost);
 router.post("/:postId", toggleLikePost);

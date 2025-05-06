@@ -8,10 +8,11 @@ import { postModel } from "../models/post.js";
 // הצגת כל הפוסטים
 export const getAllPosts = async (req, res, next) => {
     let page = parseInt(req.query.page) || 1;
-    let perPage = parseInt(req.query.perPage);
+    let perPage = parseInt(req.query.perPage) || 15;
 
     try {
         let allPosts = await postModel.find()
+        .sort({ postingDate: -1 })
             .skip((page - 1) * perPage)
             .limit(perPage);
 
