@@ -40,7 +40,7 @@ export const generateToken = (_id, userName, gender) => {
     let token = jwt.sign(
         { _id, userName, gender },
         process.env.SECRET_JWT,
-        { expiresIn: "1h" });
+        { expiresIn: "1d" });
     return token;
 }
 

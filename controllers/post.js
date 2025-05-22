@@ -6,15 +6,17 @@ import { postModel } from "../models/post.js";
 
 
 // הצגת כל הפוסטים
-export const getAllPosts = async (req, res, next) => {
+export const getAllPosts = async (req, res) => {
     let page = parseInt(req.query.page) || 1;
     let perPage = parseInt(req.query.perPage) || 15;
 
     try {
         let allPosts = await postModel.find()
-        .sort({ postingDate: -1 })
+            .sort({ postingDate: -1 })
             .skip((page - 1) * perPage)
-            .limit(perPage);
+            .limit(perPage)
+            .populate("userId", "userName profilePicture")
+            .populate("comments.userId", "userName profilePicture");
 
         return res.json(allPosts);
     } catch (err) {
@@ -26,6 +28,14 @@ export const getAllPosts = async (req, res, next) => {
 // הוספת פוסט
 export const addPost = async (req, res) => {
     let { category, content, imagePost, backgroundColor, likes, comments } = req.body;
+    const userId = req.user._id;
+
+    console.log('userId: ', userId);
+    console.log('post: ', req.body);
+
+    if (!mongoose.isValidObjectId(userId)) {
+        return res.status(400).json({ type: "not valid id", message: "ID is not the right format" });
+    }
 
     if (!category || !content)
         return res.status(400).json({ type: "missing parameters", message: "enter category and content" });
@@ -43,7 +53,7 @@ export const addPost = async (req, res) => {
         }
 
         let newPost = new postModel({
-            userId: req.user?._id || null,
+            userId: userId,
             category,
             content,
             imagePost: jimagePost,
@@ -96,45 +106,48 @@ export const toggleLikePost = async (req, res) => {
 // הוספת תגובה לפוסט
 export const addComment = async (req, res) => {
     const { postId } = req.params;
-    const { text, image } = req.body;
+    const { text, userId } = req.body;
 
     try {
         const post = await postModel.findById(postId);
         if (!post)
             return res.status(404).json({ message: "Post not found" });
 
-        const newComment = {
-            text,
-            image,
-            commentDate: new Date(),
-            userId: req.user?._id || null
-        };
+        const newComment = { text, commentDate: new Date(), userId };
 
         post.comments.push(newComment);
         await post.save();
 
-        console.log("התגובה נוספה בהצלחה");
-        return res.json(newComment);
+        await post.populate('comments.userId', 'userName profilePicture');
+
+        const addedComment = post.comments[post.comments.length - 1];
+
+        return res.status(200).json(addedComment);
+
+    } catch (err) {
+        return res.status(500).json({
+            type: "server error",
+            message: "Failed to add comment",
+            error: err.message
+        });
     }
-    catch (err) {
-        return res.status(500).json({ type: "server error", message: "failed to add comment", error: err.message });
-    }
-}
+};
 
 
 // הצגת תגובות של פוסט מסויים
 export const getCommentOfPostById = async (req, res) => {
     const { postId } = req.params;
 
-    try{
-        const post = await postModel.findById(postId);
+    try {
+        const post = await postModel.findById(postId).populate('comments.userId', 'userName profilePicture');
+
         if (!post)
             return res.status(404).json({ message: "Post not found" });
 
         return res.status(200).json({ comments: post.comments });
     }
 
-    catch(err){
+    catch (err) {
         return res.status(500).json({ type: "server error", message: "faild to get comments" });
     }
 }

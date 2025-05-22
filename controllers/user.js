@@ -17,6 +17,31 @@ export const getAllUsers = async (req, res) => {
 }
 
 
+// הצגת משתמש בודד
+export const getOneUser = async (req, res) => {
+    let { userId } = req.params;
+
+    try {
+        if (!mongoose.isValidObjectId(userId)) {
+            return res.status(400).json({ type: "not valid id", message: "ID is not the right format" });
+        }
+
+        const user = await userModel.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ type: "undefined user for display", message: "This user is undefined for display" });
+        }
+
+        return res.json(user);
+    }
+
+    catch (err) {
+        console.error(err);
+        return res.status(400).json({ type: "invalid operations", message: "Could not get user" });
+    }
+}
+
+
 // רישום משתמש
 export const addUser = async (req, res) => {
     let { userName, nickname, email, password, gender, profilePicture } = req.body;
@@ -205,33 +230,63 @@ export const resetPasswordUser = async (req, res) => {
 
 
 // עדכון פרטי משתמש
+// export const updateUserDetails = async (req, res) => {
+//     const { userId } = req.params;
+//     let { userName, nickname, email, gender, profilePicture, tags, skills } = req.body;
+
+//     if (!mongoose.isValidObjectId(userId))
+//         return res.status(400).json({ type: "not valid id", massage: "id is in not the right format" });
+
+//     try {
+//         let user = await userModel.findById(userId);
+//         if (!user)
+//             return res.status(400).json({ type: "user is undefined", massage: "there is no user with such id" });
+
+//         user.userName = userName || user.userName;
+//         user.nickname = nickname || user.nickname;
+//         user.email = email || user.email;
+//         user.gender = gender || user.gender;
+//         user.tags = tags || user.tags;
+//         if (skills) {
+//             user.skills = skills;
+//         } user.profilePicture = profilePicture || user.profilePicture;
+
+//         await user.save();
+
+//         return res.json(user);
+
+//     } catch (err) {
+//         console.log(err);
+//         res.status(400).json({ type: "invalid operation", massage: "Could not update user details" });
+//     }
+// }
 export const updateUserDetails = async (req, res) => {
     const { userId } = req.params;
-    let { userName, nickname, email, gender, profilePicture, tags, skills } = req.body;
+    const updates = req.body;
 
-    if (!mongoose.isValidObjectId(userId))
-        return res.status(400).json({ type: "not valid id", massage: "id is in not the right format" });
+    if (!mongoose.isValidObjectId(userId)) {
+        return res.status(400).json({ type: "not valid id", message: "id is not in the right format" });
+    }
 
     try {
         let user = await userModel.findById(userId);
-        if (!user)
-            return res.status(400).json({ type: "user is undefined", massage: "there is no user with such id" });
+        if (!user) {
+            return res.status(404).json({ type: "user not found", message: "no user with such id" });
+        }
 
-        user.userName = userName || user.userName;
-        user.nickname = nickname || user.nickname;
-        user.email = email || user.email;
-        user.gender = gender || user.gender;
-        user.tags = tags || user.tags;
-        user.skills = skills || user.skills;
-        user.profilePicture = profilePicture || user.profilePicture;
+        Object.keys(updates).forEach(key => {
+            if (key === 'skills' && Array.isArray(updates[key])) {
+                user.skills = [...(user.skills || []), ...updates[key]];
+            } else if (key in user) {
+                user[key] = updates[key];
+            }
+        });
 
         await user.save();
-
         return res.json(user);
-
     } catch (err) {
-        console.log(err);
-        res.status(400).json({ type: "invalid operation", massage: "Could not update user details" });
+        console.error(err);
+        return res.status(500).json({ type: "server error", message: "failed to update user details" });
     }
 }
 

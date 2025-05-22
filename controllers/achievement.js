@@ -130,17 +130,15 @@ export const getAllAchievements = async (req, res, next) => {
 
 
 // הצגת כל ההישגים של משתמש
-export const getUserAchievements = async (req, res, next) => {
+export const getUserAchievements = async (req, res) => {
     let userId = req.params.userId;
-    let page = parseInt(req.query.page) || 1;
-    let perPage = parseInt(req.query.perPage) || 12;
+
+    if (!mongoose.isValidObjectId(userId)) {
+        return res.status(400).json({ type: "not valid id", message: "ID is not the right format" });
+    }
 
     try {
-        let query = { userId: userId };
-
-        let userAchievements = await achievementModel.find(query)
-            .skip((page - 1) * perPage)
-            .limit(perPage);
+        let userAchievements = await achievementModel.find({ userId });
 
         return res.json(userAchievements);
     } catch (err) {
@@ -152,7 +150,11 @@ export const getUserAchievements = async (req, res, next) => {
 // הוספת הישג
 export const addAchievement = async (req, res) => {
     let { title, description, targetDate, category } = req.body;
+    const userId = req.user._id;
 
+    if (!mongoose.isValidObjectId(userId)) {
+        return res.status(400).json({ type: "not valid id", message: "ID is not the right format" });
+    }
 
     if (!title || !description || !category || !targetDate) {
         return res.status(400).json({ type: "missing parameters", message: "enter title, description, targetDate and category" });
@@ -162,13 +164,13 @@ export const addAchievement = async (req, res) => {
         const trackingTable = createTrackingTable(new Date(), new Date(targetDate));
 
         let newAchievement = new achievementModel({
-            // userId: req.user?._id || null,
             title,
             description,
             targetDate,
             category,
             trackingTable,
-            isCompleted: false
+            isCompleted: false,
+            userId: userId
         });
 
         const savedAchievement = await newAchievement.save();
@@ -179,30 +181,6 @@ export const addAchievement = async (req, res) => {
         return res.status(500).json({ type: "server_error", message: "Could not add achievement", error: err.message });
     }
 };
-// export const addAchievement = async (req, res) => {
-//     let { userId, title, description, targetDate, category, trackingTable } = req.body;
-
-//     if (!title || !description || !category) {
-//         return res.status(400).json({ type: "missing parameters", message: "enter title, description, targetDate and category" })
-//     }
-
-//     try {
-//         const newAchievement = new achievementModel({
-//             userId: req.user?._id || null,
-//             title, description, targetDate, category, trackingTable
-//         });
-
-//         const savedAchievement = await newAchievement.save();
-
-//         return res.status(201).json(savedAchievement);
-
-//     } catch (err) {
-//         console.error("Error adding order:", err);
-//         return res.status(500).json({
-//             type: "server_error", message: "Could not add achievement", error: err.message
-//         });
-//     }
-// }
 
 
 // פונקציה ליצירת טבלת מעקב
@@ -215,11 +193,10 @@ export const createTrackingTable = (startDate, endDate) => {
         days.push({
             day: new Date(current),
             isMarkedToday: false,
-            isCompleted: true
+            isCompleted: false
         });
         current.setDate(current.getDate() + 1);
     }
-
     return days;
 };
 
@@ -243,7 +220,6 @@ export const updateTrackingTable = async (req, res) => {
         let today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // שלב 1: עדכון יום נוכחי
         let todayEntry = achievement.trackingTable.find(entry =>
             new Date(entry.day).getTime() === today.getTime()
         );
@@ -253,7 +229,6 @@ export const updateTrackingTable = async (req, res) => {
 
         todayEntry.isMarkedToday = isMarkedToday;
 
-        // שלב 2: בדיקת השלמת ההישג
         const allMarked = achievement.trackingTable.every(e => e.isMarkedToday);
         const targetDateReached = today >= new Date(achievement.targetDate);
 
@@ -274,6 +249,8 @@ export const updateTrackingTable = async (req, res) => {
 
 // Cron Job לריצה יומית
 cron.schedule("0 0 * * *", async () => {
+    console.log("Daily Cron initialized");
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -297,3 +274,31 @@ cron.schedule("0 0 * * *", async () => {
         console.error("Cron failed:", err.message);
     }
 });
+
+
+// פונקציה להצגת הישג של משתמש
+export const getAchievementByUser = async (req, res) => {
+    const userId = req.user._id;
+    const achievementId = req.params.achievementId;
+
+    console.log('achievementId: ', achievementId);
+    console.log('userId: ', userId);
+
+    if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(achievementId)) {
+        return res.status(400).json({ type: "not_valid_id", message: "One or more IDs are not in the correct format" });
+    }
+
+    try {
+        const achievement = await achievementModel.findOne({ _id: achievementId, userId });
+
+        if (!achievement) {
+            return res.status(404).json({ type: "not_found", message: "Achievement not found for this user" });
+        }
+
+        return res.json({ achievement });
+
+    } catch (err) {
+        console.error("Error fetching tracking table:", err);
+        return res.status(500).json({ type: "server_error", message: "Failed to fetch tracking table" });
+    }
+};

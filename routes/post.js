@@ -14,7 +14,6 @@ const router = express.Router();
 
 router.get("/", getAllPosts);
 router.post("/", auth, upload.single("mediaFile"), addPost);
-
 // router.put("/:postId", toggleLikePost);
 router.post("/:postId", toggleLikePost);
 router.post("/comment/:postId", addComment);

@@ -15,8 +15,7 @@ const defaultDate = () => {
 const trackingTableSchema = mongoose.Schema({
     day: { type: Date, required: true },
     isMarkedToday: { type: Boolean, default: false },
-    currentDay: { type: Date, default: new Date()},
-    isCompleted: { type: Boolean, default: false }
+    currentDay: { type: Date, default: new Date() },
 });
 
 
@@ -28,7 +27,8 @@ export const achievementSchema = mongoose.Schema({
     targetDate: { type: Date, required: true, default: defaultDate },
     category: { type: String, required: true },
     trackingTable: [trackingTableSchema],
-    // userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' }
+    isCompleted: { type: Boolean, default: false },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' }
 });
 
 

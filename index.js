@@ -5,6 +5,7 @@ import { config } from "dotenv";
 import { connectToDb } from "./DB/connectToDb.js";
 import userRouter from "./routes/user.js";
 import achievementRouter from "./routes/achievement.js";
+import './controllers/achievement.js';
 import postRouter from "./routes/post.js";
 
 
