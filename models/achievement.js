@@ -16,7 +16,7 @@ const trackingTableSchema = mongoose.Schema({
     day: { type: Date, required: true },
     isMarkedToday: { type: Boolean, default: false },
     currentDay: { type: Date, default: new Date() },
-});
+}, { _id: true });
 
 
 // סכמת הישג

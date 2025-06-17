@@ -1,10 +1,11 @@
 import mongoose from "mongoose";
 import Joi from 'joi';
 import jwt from 'jsonwebtoken';
+import { notificationSchema } from "./notification.js";
 
 
 
-let defualtPic = "https://cdn-icons-png.freepik.com/256/10796/10796964.png?ga=GA1.1.1754982332.1740749915&semt=ais_hybrid";
+let defaultPic = "https://cdn-icons-png.freepik.com/256/10796/10796964.png?ga=GA1.1.1754982332.1740749915&semt=ais_hybrid";
 
 
 
@@ -18,9 +19,11 @@ export const userSchema = mongoose.Schema({
     role: { type: String, default: "USER" },
     enterDate: { type: Date, default: Date.now() },
     gender: { type: String, required: true },
-    profilePicture: { type: String, default: defualtPic },
+    profilePicture: { type: String, default: defaultPic },
     tags: { type: [String], default: [] },
-    skills: { type: [String], default: [] }
+    skills: { type: [String], default: [] },
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Users' }],
+    notifications: [notificationSchema]
 })
 
 

@@ -8,7 +8,8 @@ import mongoose from 'mongoose';
 // הצגת כל המשתמשים
 export const getAllUsers = async (req, res) => {
     try {
-        let allUsers = await userModel.find({}, 'userName nickname email role enterDate gender profilePicture tags');
+        let allUsers = await userModel.find({},
+            'userName nickname email role enterDate gender profilePicture tags skills following notifications');
         return res.json(allUsers);
     }
     catch (err) {
@@ -25,16 +26,13 @@ export const getOneUser = async (req, res) => {
         if (!mongoose.isValidObjectId(userId)) {
             return res.status(400).json({ type: "not valid id", message: "ID is not the right format" });
         }
-
         const user = await userModel.findById(userId);
 
         if (!user) {
             return res.status(404).json({ type: "undefined user for display", message: "This user is undefined for display" });
         }
-
         return res.json(user);
     }
-
     catch (err) {
         console.error(err);
         return res.status(400).json({ type: "invalid operations", message: "Could not get user" });
@@ -79,7 +77,8 @@ export const addUser = async (req, res) => {
             profilePicture,
             tags: [],
             skills: [],
-            enterDate: new Date()
+            enterDate: new Date(),
+            notifications: []
         });
 
         await newUser.save();
@@ -98,7 +97,8 @@ export const addUser = async (req, res) => {
             profilePicture: newUser.profilePicture,
             enterDate: newUser.enterDate,
             tags: newUser.tags,
-            skills: newUser.skills
+            skills: newUser.skills,
+            notifications: newUser.notifications
         });
     }
     catch (err) {
@@ -144,10 +144,12 @@ export const login = async (req, res) => {
             gender: user.gender,
             tags: user.tags,
             skills: user.skills,
-            profilePicture: user.profilePicture
-
+            profilePicture: user.profilePicture,
+            notifications: user.notifications,
+            count: user.notifications.length
         });
     }
+
     catch (err) {
         console.log(err);
         return res.status(400).json({ type: "invalid operations", message: "Could not log in user" });
@@ -213,6 +215,7 @@ export const resetPasswordUser = async (req, res) => {
 
     try {
         const user = await userModel.findOne({ email: email })
+
         if (!user)
             return res.status(404).json({ type: "user is undefined", message: "one or more ditails are invalide" })
         console.log("user found!");
@@ -260,6 +263,8 @@ export const resetPasswordUser = async (req, res) => {
 //         res.status(400).json({ type: "invalid operation", massage: "Could not update user details" });
 //     }
 // }
+
+
 export const updateUserDetails = async (req, res) => {
     const { userId } = req.params;
     const updates = req.body;
@@ -305,3 +310,99 @@ export const getRandomUsers = async (req, res) => {
         res.status(500).json({ type: "invalid operation", massage: "Could not get random users" });
     }
 };
+
+
+// הוספת חברים חדשים
+export const addFriendToNetwork = async (req, res) => {
+    const { userId } = req.params;
+    const { friendId } = req.body;
+
+    if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(friendId)) {
+        return res.status(400).json({ type: "not valid id", message: "id is not in the right format" });
+    }
+
+    try {
+        const currentUser = await userModel.findById(userId);
+        const newUserToAdd = await userModel.findById(friendId);
+
+        if (!currentUser || !newUserToAdd) {
+            return res.status(404).json({ type: "user not found", message: "logged in user not found" });
+        }
+
+        if (currentUser._id.equals(newUserToAdd._id)) {
+            return res.status(400).json({ message: "user can't add himself" });
+        }
+
+        if (currentUser.following.includes(newUserToAdd._id)) {
+            return res.status(400).json({ message: "user already follows this user" });
+        }
+
+        currentUser.following.push(newUserToAdd._id);
+        await currentUser.save();
+
+        return res.json({ message: "Friend added successfully", user: currentUser });
+
+    } catch (err) {
+        console.error("Error adding friend:", err);
+        return res.status(500).json({ message: "Server error" });
+    }
+}
+
+
+// הצגת following של משתמש
+export const getFollowing = async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        const user = await userModel.findById(userId)
+            .populate('following', '_id userName profilePicture nickname')
+            .select('following');
+
+        if (!user) {
+            return res.status(400).json({ type: "user not found", message: "user id is not found" });
+        }
+
+        const followingList = user.following.map(f => ({
+            _id: f._id,
+            userName: f.userName,
+            profilePicture: f.profilePicture,
+            nickname: f.nickname
+        }));
+
+        return res.status(200).json({ count: followingList.length, following: followingList });
+    }
+    catch (err) {
+        return res.status(500).json({ message: "Server error" });
+    }
+};
+
+
+// הצגת התראות של משתמש
+export const getNotificationsByUser = async (req, res) => {
+    const { userId } = req.params;
+
+    if (!mongoose.isValidObjectId(userId)) {
+        return res.status(400).json({ type: "not valid id", message: "id is not in the right format" });
+    }
+
+    try {
+        const user = await userModel.findById(userId)
+        .select('notifications')
+        .populate('notifications.fromUserId', 'userName profilePicture')
+        .populate('notifications.postId', 'content')
+        .populate('notifications.achievementId', 'title isCompleted')
+        
+        if (!user)
+            return res.status(404).json({ message: "User not found" });
+
+        // return res.status(200).json(user.notifications);
+        return res.status(200).json({
+            notifications: user.notifications,
+            count: user.notifications.length
+          });
+          
+    }
+    catch (err) {
+        return res.status(500).json({ type: "server error", message: "Could not retrieve notifications", error: err.message });
+    }
+}

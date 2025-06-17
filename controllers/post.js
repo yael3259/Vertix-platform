@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 import { postModel } from "../models/post.js";
-
-
+import { userModel } from '../models/user.js';
 
 
 
@@ -25,6 +24,48 @@ export const getAllPosts = async (req, res) => {
 }
 
 
+// הצגת פוסטים לפי משתמש
+export const getPostsByUserId = async (req, res) => {
+    let { userId } = req.params;
+
+    if (!mongoose.isValidObjectId(userId)) {
+        return res.status(400).json({ type: "not valid id", message: "ID is not the right format" });
+    }
+
+    try {
+        let posts = await postModel.find({ userId });
+
+        return res.json(posts);
+    }
+    catch (err) {
+        return res.status(400).json({ type: "invalid operation", message: "Could not get posts" });
+    }
+}
+
+
+// הצגת פוסט בודד
+export const getPostById = async (req, res) => {
+    let { postId } = req.params;
+    console.log(postId);
+
+    if (!mongoose.isValidObjectId(postId)) {
+        return res.status(400).json({ type: "not valid id", message: "ID is not the right format" });
+    }
+
+    try {
+        let post = await postModel.findById(postId)
+        .populate("userId", "userName profilePicture")
+        .populate("comments.userId", "userName profilePicture");
+
+        return res.json(post);
+    }
+
+    catch (err) {
+        return res.status(400).json({ type: "invalid operation", message: "Could not get post" });
+    }
+}
+
+
 // הוספת פוסט
 export const addPost = async (req, res) => {
     let { category, content, imagePost, backgroundColor, likes, comments } = req.body;
@@ -42,7 +83,7 @@ export const addPost = async (req, res) => {
 
     try {
         let jimagePost = '';
-        if (req.imagePost) {
+        if (imagePost) {
             jimagePost = imagePost;
         }
 
@@ -113,7 +154,12 @@ export const addComment = async (req, res) => {
         if (!post)
             return res.status(404).json({ message: "Post not found" });
 
-        const newComment = { text, commentDate: new Date(), userId };
+        const newComment = {
+            _id: new mongoose.Types.ObjectId(),
+            text,
+            commentDate: new Date(),
+            userId
+        };
 
         post.comments.push(newComment);
         await post.save();
@@ -122,19 +168,38 @@ export const addComment = async (req, res) => {
 
         const addedComment = post.comments[post.comments.length - 1];
 
+        try {
+            const user = await userModel.findById(post.userId);
+
+            const newNotification = {
+                _id: new mongoose.Types.ObjectId(),
+                commentText: text,
+                type: 'comment',
+                notifiedUserId: post.userId,
+                postId: post._id,
+                commentId: addedComment._id,
+                fromUserId: userId,
+                isRead: false,
+                creatingDate: new Date()
+            };
+
+            user.notifications.push(newNotification);
+            await user.save();
+        }
+
+        catch (err) {
+            console.error(notificationError.message);
+        }
+
         return res.status(200).json(addedComment);
 
     } catch (err) {
-        return res.status(500).json({
-            type: "server error",
-            message: "Failed to add comment",
-            error: err.message
-        });
+        return res.status(500).json({ type: "server error", message: "Failed to add comment" });
     }
 };
 
 
-// הצגת תגובות של פוסט מסויים
+// הצגת תגובות של פוסט בודד
 export const getCommentOfPostById = async (req, res) => {
     const { postId } = req.params;
 
