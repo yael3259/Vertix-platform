@@ -54,8 +54,8 @@ export const getPostById = async (req, res) => {
 
     try {
         let post = await postModel.findById(postId)
-        .populate("userId", "userName profilePicture")
-        .populate("comments.userId", "userName profilePicture");
+            .populate("userId", "userName profilePicture")
+            .populate("comments.userId", "userName profilePicture");
 
         return res.json(post);
     }
@@ -214,5 +214,62 @@ export const getCommentOfPostById = async (req, res) => {
 
     catch (err) {
         return res.status(500).json({ type: "server error", message: "faild to get comments" });
+    }
+}
+
+
+// הוספת פוסט למועדפים
+export const addToFavoritePosts = async (req, res) => {
+    const { userId } = req.params;
+    const { postId } = req.body;
+
+    try {
+        const user = await userModel.findById(userId);
+        const post = await postModel.findById(postId);
+
+        if (!user || !post) {
+            return res.status(404).json({ type: "not found", message: "User or post not found" });
+        }
+
+        if (user.favoritePosts.includes(post._id)) {
+            return res.status(400).json({ type: "duplicate", message: "Post already in favorites" });
+        }
+
+        user.favoritePosts.push(post._id);
+
+        await user.save();
+
+        return res.status(200).json({ favoritePosts: user.favoritePosts });
+    }
+
+    catch (err) {
+        return res.status(500).json({ type: "server error", message: "Failed to add post to favorites" });
+    }
+}
+
+
+// הצגת פוסטים מועדפים לפי משתמש
+export const getFavoritePosts = async (req, res) => {
+    const { userId } = req.params;
+
+if (!mongoose.isValidObjectId(userId)) {
+        return res.status(400).json({ message: "Invalid user ID format" });
+    }
+
+    try {
+        const user = await userModel.findById(userId).lean();
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const favoritePosts = await postModel.find({
+            _id: { $in: user.favoritePosts }
+        }).populate("userId", "userName profilePicture")
+
+        return res.status(200).json(favoritePosts);
+    } catch (err) {
+        console.error("Error getting favorite posts", err);
+        return res.status(500).json({ message: "Server error fetching favorite posts" });
     }
 }

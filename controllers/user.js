@@ -387,11 +387,11 @@ export const getNotificationsByUser = async (req, res) => {
 
     try {
         const user = await userModel.findById(userId)
-        .select('notifications')
-        .populate('notifications.fromUserId', 'userName profilePicture')
-        .populate('notifications.postId', 'content')
-        .populate('notifications.achievementId', 'title isCompleted')
-        
+            .select('notifications')
+            .populate('notifications.fromUserId', 'userName profilePicture')
+            .populate('notifications.postId', 'content')
+            .populate('notifications.achievementId', 'title isCompleted')
+
         if (!user)
             return res.status(404).json({ message: "User not found" });
 
@@ -399,10 +399,39 @@ export const getNotificationsByUser = async (req, res) => {
         return res.status(200).json({
             notifications: user.notifications,
             count: user.notifications.length
-          });
-          
+        });
+
     }
     catch (err) {
         return res.status(500).json({ type: "server error", message: "Could not retrieve notifications", error: err.message });
+    }
+}
+
+
+// עדכון התראות כנקראו
+export const markNotificationsAsRead = async (req, res) => {
+    const { userId } = req.params;
+
+    if (!mongoose.isValidObjectId(userId)) {
+        return res.status(400).json({ type: "not valid id", message: "id is not in the right format" });
+    }
+
+    try {
+        const user = await userModel.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ type: "not found", message: "User not found" })
+        }
+
+        user.notifications.forEach(notification => {
+            notification.isRead = true;
+        });
+
+        await user.save();
+
+        return res.status(200).json({ type: "success", message: "All notifications marked as read" })
+    }
+    catch (err) {
+        return res.status(500).json({ type: "server error", message: "Could not update notifications", error: err.message });
     }
 }

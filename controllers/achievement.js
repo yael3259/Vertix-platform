@@ -36,7 +36,7 @@ export const getUserAchievements = async (req, res) => {
         let userAchievements = await achievementModel.find({ userId });
 
         return res.json(userAchievements);
-        
+
     } catch (err) {
         return res.status(400).json({ type: "invalid operation", message: "Could not get achievements" });
     }
@@ -66,6 +66,7 @@ export const addAchievement = async (req, res) => {
             category,
             trackingTable,
             isCompleted: false,
+            statusTable: 'in-progress',
             userId: userId
         });
 
@@ -125,13 +126,6 @@ export const updateTrackingTable = async (req, res) => {
 
         todayEntry.isMarkedToday = isMarkedToday;
 
-        const allMarked = achievement.trackingTable.every(e => e.isMarkedToday);
-        const targetDateReached = today >= new Date(achievement.targetDate);
-
-        if (targetDateReached && allMarked) {
-            achievement.isCompleted = true;
-        }
-
         await achievement.save();
 
         return res.json(achievement);
@@ -143,7 +137,7 @@ export const updateTrackingTable = async (req, res) => {
 };
 
 
-// Cron Job לריצה יומית
+// Cron Job לריצה יומית בחצות
 cron.schedule("0 0 * * *", async () => {
     console.log("Daily Cron initialized");
 
@@ -154,18 +148,33 @@ cron.schedule("0 0 * * *", async () => {
         const achievements = await achievementModel.find();
 
         for (let achievement of achievements) {
-            const entry = achievement.trackingTable.find(e =>
+            // חיפוש היום הנוכחי
+            const todayEntry = achievement.trackingTable.find(e =>
                 new Date(e.day).getTime() === today.getTime()
             );
 
-            if (entry && !entry.isMarkedToday) {
-                entry.isCompleted = false;
+            // אם היום קיים ועדיין לא סומן-מעדכן
+            if (todayEntry && typeof todayEntry.isMarkedToday === 'undefined') {
+                todayEntry.isMarkedToday = false;
+            }
+
+            const allMarked = achievement.trackingTable.every(e => e.isMarkedToday);
+            const targetDate = new Date(achievement.targetDate);
+            const targetDateReached = today >= targetDate;
+
+            if (targetDateReached && allMarked) {
+                achievement.isCompleted = true;
+                achievement.statusTable = 'completed';
+            } else if (targetDateReached && !allMarked) {
+                achievement.statusTable = 'failed';
+            } else {
+                achievement.statusTable = 'in-progress';
             }
 
             await achievement.save();
         }
 
-        console.log("Cron ran: achievements checked");
+        console.log("Cron ran: achievements updated");
     } catch (err) {
         console.error("Cron failed:", err.message);
     }

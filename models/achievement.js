@@ -28,6 +28,7 @@ export const achievementSchema = mongoose.Schema({
     category: { type: String, required: true },
     trackingTable: [trackingTableSchema],
     isCompleted: { type: Boolean, default: false },
+    statusTable: { type: String, enum: ['completed', 'failed', 'in-progress'],default: 'in-progress'},
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' }
 });
 

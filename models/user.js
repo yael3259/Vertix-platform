@@ -23,7 +23,8 @@ export const userSchema = mongoose.Schema({
     tags: { type: [String], default: [] },
     skills: { type: [String], default: [] },
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Users' }],
-    notifications: [notificationSchema]
+    notifications: [notificationSchema],
+    favoritePosts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Posts' }]
 })
 
 
