@@ -18,7 +18,8 @@ export const postSchema = new mongoose.Schema({
     content: { type: String, required: true },
     imagePost: { type: String, default: '' },
     backgroundColor: { type: String, default: '#FFFFFF' },
-    likes: { type: Number, default: 0 },
+    // likes: { type: Number, default: 0 },
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Users' }],
     comments: [commentSchema],
     postingDate: { type: Date, default: Date.now },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' }
@@ -29,7 +30,6 @@ export const postValidator = (post) => {
     const schema = Joi.object({
         content: Joi.string().min(5).max(70).required(),
         backgroundColor: Joi.string().optional(),
-        likes: Joi.number().integer().min(0).optional(),
         comments: Joi.array().optional(),
     });
     return schema.validate(post);

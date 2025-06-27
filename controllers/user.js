@@ -18,6 +18,24 @@ export const getAllUsers = async (req, res) => {
 }
 
 
+// הצגת משתמשים לפי תחילת השם שהוקלד בתיבת החיפוש
+export const getUsersByValue = async (req, res) => {
+  console.log('Request query:', req.query);
+  const value = req.query.value || "";
+  if (!value) return res.json([]);
+  
+  try {
+    // ודא שפה אין המרה או בדיקה על value שדורשת מזהה
+    const regex = new RegExp(`^${value}`, "i");
+    const filteredUsers = await userModel.find({ userName: { $regex: regex } });
+    return res.json(filteredUsers);
+  } catch(err) {
+    console.error('Error in getUsersByValue:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+}
+
+
 // הצגת משתמש בודד
 export const getOneUser = async (req, res) => {
     let { userId } = req.params;
@@ -300,7 +318,7 @@ export const updateUserDetails = async (req, res) => {
 export const getRandomUsers = async (req, res) => {
     try {
         const randomUsers = await userModel.aggregate([
-            { $sample: { size: 3 } },
+            { $sample: { size: 6 } },
             { $project: { password: 0 } }
         ]);
 

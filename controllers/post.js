@@ -115,31 +115,32 @@ export const addPost = async (req, res) => {
 
 // הוספת/ הסרת לייק בפוסט
 export const toggleLikePost = async (req, res) => {
-    const { postId } = req.params;
-    const { userId } = req.body;
-
-    if (!mongoose.isValidObjectId(postId))
-        return res.status(400).json({ message: "Invalid post ID" });
+    const { userId } = req.params;
+    const { postId } = req.body;
+    console.log("body received:", req.body);
 
     try {
         const post = await postModel.findById(postId);
-        if (!post)
-            return res.status(404).json({ message: "Post not found" });
+        if (!post) return res.status(404).json({ error: "Post not found" });
 
-        const userIndex = post.usersLiked.indexOf(userId);
-        if (userIndex === -1) {
-            post.usersLiked.push(userId);
-            post.likes += 1;
+        console.log("post.likes before:", post.likes);
+        post.likes = post.likes || [];
+
+        const alreadyLiked = post.likes.includes(userId);
+
+        if (alreadyLiked) {
+            post.likes.pull(userId);
         } else {
-            post.usersLiked.splice(userIndex, 1);
-            post.likes -= 1;
+            post.likes.push(userId);
         }
 
         await post.save();
-        return res.json({ likes: post.likes });
 
-    } catch (error) {
-        return res.status(500).json({ type: "server error", message: "faild to toggle like" });
+        res.json({ likes: post.likes, liked: !alreadyLiked });
+
+    } catch (err) {
+        console.error("toggleLike error:", err);
+        res.status(500).json({ error: "Internal server error" });
     }
 };
 
@@ -252,7 +253,7 @@ export const addToFavoritePosts = async (req, res) => {
 export const getFavoritePosts = async (req, res) => {
     const { userId } = req.params;
 
-if (!mongoose.isValidObjectId(userId)) {
+    if (!mongoose.isValidObjectId(userId)) {
         return res.status(400).json({ message: "Invalid user ID format" });
     }
 

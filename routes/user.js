@@ -1,11 +1,11 @@
 import express from "express";
-import { getAllUsers, getOneUser, addUser, login, deleteUser, log_outUser, resetPasswordUser, updateUserDetails, getRandomUsers, addFriendToNetwork, getFollowing, getNotificationsByUser, markNotificationsAsRead } from "../controllers/user.js";
+import { getAllUsers, getOneUser, addUser, login, deleteUser, log_outUser, getUsersByValue, resetPasswordUser, updateUserDetails, getRandomUsers, addFriendToNetwork, getFollowing, getNotificationsByUser, markNotificationsAsRead } from "../controllers/user.js";
 import { auth } from "../auth.js";
 
 
 const router = express.Router();
 
-
+router.get("/getUsersWithSameLetters", getUsersByValue);
 router.get("/", getAllUsers);
 router.get("/random", getRandomUsers);
 router.get("/:userId", getOneUser);
