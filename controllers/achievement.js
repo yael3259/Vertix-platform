@@ -45,7 +45,7 @@ export const getUserAchievements = async (req, res) => {
 
 // הוספת הישג
 export const addAchievement = async (req, res) => {
-    let { title, description, targetDate, category } = req.body;
+    let { title, description, targetDate, category, shouldCreatePost } = req.body;
     const userId = req.user._id;
 
     if (!mongoose.isValidObjectId(userId)) {
@@ -71,7 +71,7 @@ export const addAchievement = async (req, res) => {
         });
 
         const savedAchievement = await newAchievement.save();
-        return res.status(201).json(savedAchievement);
+        return res.status(201).json({ savedAchievement, shouldCreatePost: shouldCreatePost });
 
     } catch (err) {
         console.error("Error adding achievement:", err);
@@ -139,6 +139,7 @@ export const updateTrackingTable = async (req, res) => {
 
 // Cron Job לריצה יומית בחצות
 cron.schedule("0 0 * * *", async () => {
+    // cron.schedule("*/5 * * * * *", async () => {
     console.log("Daily Cron initialized");
 
     const today = new Date();
@@ -148,6 +149,8 @@ cron.schedule("0 0 * * *", async () => {
         const achievements = await achievementModel.find();
 
         for (let achievement of achievements) {
+            const achievementOfUser = achievement.userId;
+
             // חיפוש היום הנוכחי
             const todayEntry = achievement.trackingTable.find(e =>
                 new Date(e.day).getTime() === today.getTime()
@@ -165,6 +168,29 @@ cron.schedule("0 0 * * *", async () => {
             if (targetDateReached && allMarked) {
                 achievement.isCompleted = true;
                 achievement.statusTable = 'completed';
+
+                if (!achievement.notificationSent) {
+                    try {
+                        const user = await userModel.findById(achievementOfUser);
+
+                        const newNotification = {
+                            _id: new mongoose.Types.ObjectId(),
+                            type: 'table',
+                            notifiedUserId: achievementOfUser,
+                            achievementId: achievement._id,
+                            achievementTitle: achievement.title,
+                            isRead: false,
+                            creatingDate: new Date()
+                        };
+
+                        user.notifications.push(newNotification);
+                        await user.save();
+                        achievement.notificationSent = true;
+                    } catch (err) {
+                        console.error(err.message);
+                    }
+                }
+
             } else if (targetDateReached && !allMarked) {
                 achievement.statusTable = 'failed';
             } else {

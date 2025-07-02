@@ -18,7 +18,6 @@ export const postSchema = new mongoose.Schema({
     content: { type: String, required: true },
     imagePost: { type: String, default: '' },
     backgroundColor: { type: String, default: '#FFFFFF' },
-    // likes: { type: Number, default: 0 },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Users' }],
     comments: [commentSchema],
     postingDate: { type: Date, default: Date.now },

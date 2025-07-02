@@ -12,6 +12,7 @@ export const notificationSchema = new mongoose.Schema({
     commentId: { type: mongoose.Schema.Types.ObjectId },
     commentText: { type: String },
     achievementId: { type: mongoose.Schema.Types.ObjectId, ref: 'Achievements' },
+    achievementTitle: { type: String },
     fromUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' },
     isRead: { type: Boolean, default: false },
     creatingDate: { type: Date, default: Date.now }

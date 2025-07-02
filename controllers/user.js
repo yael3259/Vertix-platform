@@ -20,19 +20,19 @@ export const getAllUsers = async (req, res) => {
 
 // הצגת משתמשים לפי תחילת השם שהוקלד בתיבת החיפוש
 export const getUsersByValue = async (req, res) => {
-  console.log('Request query:', req.query);
-  const value = req.query.value || "";
-  if (!value) return res.json([]);
-  
-  try {
-    // ודא שפה אין המרה או בדיקה על value שדורשת מזהה
-    const regex = new RegExp(`^${value}`, "i");
-    const filteredUsers = await userModel.find({ userName: { $regex: regex } });
-    return res.json(filteredUsers);
-  } catch(err) {
-    console.error('Error in getUsersByValue:', err);
-    return res.status(500).json({ message: 'Server error' });
-  }
+    console.log('Request query:', req.query);
+    const value = req.query.value || "";
+    if (!value) return res.json([]);
+
+    try {
+        // ודא שפה אין המרה או בדיקה על value שדורשת מזהה
+        const regex = new RegExp(`^${value}`, "i");
+        const filteredUsers = await userModel.find({ userName: { $regex: regex } });
+        return res.json(filteredUsers);
+    } catch (err) {
+        console.error('Error in getUsersByValue:', err);
+        return res.status(500).json({ message: 'Server error' });
+    }
 }
 
 
@@ -251,39 +251,40 @@ export const resetPasswordUser = async (req, res) => {
 
 
 // עדכון פרטי משתמש
-// export const updateUserDetails = async (req, res) => {
-//     const { userId } = req.params;
-//     let { userName, nickname, email, gender, profilePicture, tags, skills } = req.body;
+export const editUserDetails = async (req, res) => {
+    const { userId } = req.params;
+    let { userName, nickname, email, gender, profilePicture } = req.body;
 
-//     if (!mongoose.isValidObjectId(userId))
-//         return res.status(400).json({ type: "not valid id", massage: "id is in not the right format" });
+    if (!mongoose.isValidObjectId(userId))
+        return res.status(400).json({ type: "not valid id", massage: "id is in not the right format" });
 
-//     try {
-//         let user = await userModel.findById(userId);
-//         if (!user)
-//             return res.status(400).json({ type: "user is undefined", massage: "there is no user with such id" });
+    try {
+        let user = await userModel.findById(userId);
+        if (!user)
+            return res.status(404).json({ type: "user is undifind", massage: "there is no user with such id" });
 
-//         user.userName = userName || user.userName;
-//         user.nickname = nickname || user.nickname;
-//         user.email = email || user.email;
-//         user.gender = gender || user.gender;
-//         user.tags = tags || user.tags;
-//         if (skills) {
-//             user.skills = skills;
-//         } user.profilePicture = profilePicture || user.profilePicture;
+        user.userName = userName?.trim() || user.userName;
+        user.nickname = nickname?.trim() || user.nickname;
+        user.email = email?.trim() || user.email;
+        user.gender = gender?.value?.trim() || user.gender;
+        user.profilePicture = profilePicture?.trim() || user.profilePicture;
 
-//         await user.save();
+        await user.save();
 
-//         return res.json(user);
+        // מוחק את שדה הסיסמה מהאוביקט המוחזר (DB-לא מה)
+        const userObj = user.toObject();
+        delete userObj.password;
 
-//     } catch (err) {
-//         console.log(err);
-//         res.status(400).json({ type: "invalid operation", massage: "Could not update user details" });
-//     }
-// }
+        return res.json(userObj);
 
+    } catch (err) {
+        console.log(err);
+        res.status(400).json({ type: "invalid operation", massage: "could not edit user" });
+    }
+};
 
-export const updateUserDetails = async (req, res) => {
+// הוספת כישור חדש
+export const updateUserSkills = async (req, res) => {
     const { userId } = req.params;
     const updates = req.body;
 
@@ -358,6 +359,23 @@ export const addFriendToNetwork = async (req, res) => {
         currentUser.following.push(newUserToAdd._id);
         await currentUser.save();
 
+        try {
+            const newNotification = {
+                _id: new mongoose.Types.ObjectId(),
+                type: 'follow',
+                notifiedUserId: newUserToAdd,
+                fromUserId: currentUser,
+                isRead: false,
+                creatingDate: new Date()
+            }
+
+            newUserToAdd.notifications.push(newNotification);
+            await newUserToAdd.save();
+
+        } catch (err) {
+            console.error(err.message);
+        }
+
         return res.json({ message: "Friend added successfully", user: currentUser });
 
     } catch (err) {
@@ -406,14 +424,14 @@ export const getNotificationsByUser = async (req, res) => {
     try {
         const user = await userModel.findById(userId)
             .select('notifications')
-            .populate('notifications.fromUserId', 'userName profilePicture')
-            .populate('notifications.postId', 'content')
-            .populate('notifications.achievementId', 'title isCompleted')
+            .populate('notifications.fromUserId', 'userName profilePicture _id')
+            .populate('notifications.postId', 'content _id')
+            .populate('notifications.achievementId', 'title isCompleted _id')
+        // .populate('notifications.commentId', '_id');
 
         if (!user)
             return res.status(404).json({ message: "User not found" });
 
-        // return res.status(200).json(user.notifications);
         return res.status(200).json({
             notifications: user.notifications,
             count: user.notifications.length
