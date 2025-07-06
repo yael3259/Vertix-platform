@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Joi from 'joi';
 import jwt from 'jsonwebtoken';
 import { notificationSchema } from "./notification.js";
+// import { boostSchema } from "./achievement.js";
 
 
 
@@ -20,12 +21,14 @@ export const userSchema = mongoose.Schema({
     enterDate: { type: Date, default: Date.now() },
     gender: { type: String, required: true },
     profilePicture: { type: String, default: defaultPic },
-    tags: { type: [String], default: [] },
+    points: { type: Number, default: 0 },
+    tags: [String],
     skills: { type: [String], default: [] },
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Users' }],
     notifications: [notificationSchema],
     favoritePosts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Posts' }]
 })
+// לעדכן את כל פונקציות הUSER בשדות החדשים שנוספו
 
 
 export const userValidator = (_user) => {

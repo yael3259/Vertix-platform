@@ -9,7 +9,7 @@ import mongoose from 'mongoose';
 export const getAllUsers = async (req, res) => {
     try {
         let allUsers = await userModel.find({},
-            'userName nickname email role enterDate gender profilePicture tags skills following notifications');
+            'userName nickname email role enterDate gender profilePicture points tags skills following notifications');
         return res.json(allUsers);
     }
     catch (err) {
@@ -93,6 +93,7 @@ export const addUser = async (req, res) => {
             role,
             gender,
             profilePicture,
+            points,
             tags: [],
             skills: [],
             enterDate: new Date(),
@@ -114,6 +115,7 @@ export const addUser = async (req, res) => {
             gender: newUser.gender,
             profilePicture: newUser.profilePicture,
             enterDate: newUser.enterDate,
+            points: newUser.points,
             tags: newUser.tags,
             skills: newUser.skills,
             notifications: newUser.notifications
@@ -162,6 +164,7 @@ export const login = async (req, res) => {
             gender: user.gender,
             tags: user.tags,
             skills: user.skills,
+            points: user.points,
             profilePicture: user.profilePicture,
             notifications: user.notifications,
             count: user.notifications.length
@@ -198,33 +201,6 @@ export const deleteUser = async (req, res) => {
         return res.status(500).json({ type: "invalid operation", message: err.message });
     }
 };
-
-
-// התנתקות משתמש
-export const log_outUser = async (req, res) => {
-    const { userId } = req.params;
-
-    try {
-        if (!mongoose.isValidObjectId(userId)) {
-            return res.status(400).json({ type: "not valid id", message: "ID is not the right format" });
-        }
-
-        const user = await userModel.findById(userId);
-
-        if (!user) {
-            return res.status(404).json({ type: "undefined user for log out", message: "This user is undefined for log out" });
-        }
-
-        user.status = "guest";
-        await user.save();
-
-        return res.json({ message: "User logged out successfully", user });
-
-    } catch (err) {
-        console.error("Error details:", { message: err.message, stack: err.stack, code: err.code });
-        return res.status(500).json({ type: "invalid operation", message: err.message });
-    }
-}
 
 
 // שינוי סיסמת משתמש
@@ -282,6 +258,7 @@ export const editUserDetails = async (req, res) => {
         res.status(400).json({ type: "invalid operation", massage: "could not edit user" });
     }
 };
+
 
 // הוספת כישור חדש
 export const updateUserSkills = async (req, res) => {
