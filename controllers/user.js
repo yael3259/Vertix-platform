@@ -1,6 +1,7 @@
 import { userModel, generateToken } from "../models/user.js";
 import bcrypt from "bcryptjs";
 import mongoose from 'mongoose';
+import cron from 'node-cron';
 
 
 
@@ -8,8 +9,12 @@ import mongoose from 'mongoose';
 // הצגת כל המשתמשים
 export const getAllUsers = async (req, res) => {
     try {
+        // let allUsers = await userModel.find({},
+        //     'userName nickname email role enterDate gender profilePicture points tags skills following notifications');
         let allUsers = await userModel.find({},
-            'userName nickname email role enterDate gender profilePicture points tags skills following notifications');
+            'userName nickname email role enterDate gender profilePicture points tags skills following notifications'
+        ).sort({ points: -1 });
+
         return res.json(allUsers);
     }
     catch (err) {
@@ -93,7 +98,7 @@ export const addUser = async (req, res) => {
             role,
             gender,
             profilePicture,
-            points,
+            points: 0,
             tags: [],
             skills: [],
             enterDate: new Date(),
@@ -125,7 +130,7 @@ export const addUser = async (req, res) => {
         console.error(err);
         return res.status(400).json({ type: "invalid operations", message: "Could not add user" });
     }
-};
+}
 
 
 // התחברות משתמש
@@ -200,7 +205,7 @@ export const deleteUser = async (req, res) => {
         console.error("Error details:", { message: err.message, stack: err.stack, code: err.code });
         return res.status(500).json({ type: "invalid operation", message: err.message });
     }
-};
+}
 
 
 // שינוי סיסמת משתמש
@@ -257,7 +262,47 @@ export const editUserDetails = async (req, res) => {
         console.log(err);
         res.status(400).json({ type: "invalid operation", massage: "could not edit user" });
     }
-};
+}
+
+
+// הוספת תג לטופ 3 בכל יום ראשון ב 19:00
+cron.schedule('0 19 * * 0', async () => {
+    console.log("Tag cron started");
+
+    try {
+        const top3 = await userModel.find({ points: { $gt: 0 } })
+            .sort({ points: -1 })
+            .limit(3);
+
+        const medals = ['gold', 'silver', 'bronze'];
+
+        for (let i = 0; i < top3.length; i++) {
+            const user = top3[i];
+            const medal = medals[i];
+
+            const existingTag = user.tags.find(tag => tag.name === medal);
+
+            if (existingTag) {
+                await userModel.updateOne(
+                    { _id: user._id, "tags.name": medal },
+                    { $inc: { "tags.$.value": 1 } }
+                );
+            }
+            else {
+                await userModel.updateOne(
+                    { _id: user._id },
+                    { $push: { tags: { name: medal, value: 1 } } }
+                );
+            }
+            console.log(`${user.userName} got a tag ${medal}`);
+        }
+    }
+    catch (err) {
+        console.error("Cron failed:", err.message);
+    }
+}, {
+    timezone: "Asia/Jerusalem"
+})
 
 
 // הוספת כישור חדש
@@ -305,10 +350,10 @@ export const getRandomUsers = async (req, res) => {
         console.error(err);
         res.status(500).json({ type: "invalid operation", massage: "Could not get random users" });
     }
-};
+}
 
 
-// הוספת חברים חדשים
+// הוספת חבר חדש (מעקב)
 export const addFriendToNetwork = async (req, res) => {
     const { userId } = req.params;
     const { friendId } = req.body;
@@ -322,7 +367,7 @@ export const addFriendToNetwork = async (req, res) => {
         const newUserToAdd = await userModel.findById(friendId);
 
         if (!currentUser || !newUserToAdd) {
-            return res.status(404).json({ type: "user not found", message: "logged in user not found" });
+            return res.status(404).json({ type: "user not found", message: "logged in user or friend user not found" });
         }
 
         if (currentUser._id.equals(newUserToAdd._id)) {
@@ -362,6 +407,38 @@ export const addFriendToNetwork = async (req, res) => {
 }
 
 
+// הסרת מעקב אחרי חבר
+export const removeFriendFromNetwork = async (req, res) => {
+    const { userId } = req.params;
+    const { friendId } = req.body;
+
+    if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(friendId)) {
+        return res.status(400).json({ type: "not valid id", message: "id is not in the right format" });
+    }
+
+    try {
+        const currentUser = await userModel.findById(userId);
+        const userToRemove = await userModel.findById(friendId);
+
+        if (!currentUser || !userToRemove) {
+            return res.status(404).json({ type: "user not found", message: "logged in user or friend user not found" });
+        }
+
+        if (currentUser.following.includes(userToRemove._id)) {
+            currentUser.following.pull(userToRemove._id);
+        }
+
+        await currentUser.save();
+
+        return res.json({ message: "Friend removed successfully", user: currentUser });
+
+    } catch (err) {
+        console.error("Error removing friend:", err);
+        return res.status(500).json({ message: "Server error" });
+    }
+}
+
+
 // הצגת following של משתמש
 export const getFollowing = async (req, res) => {
     const { userId } = req.params;
@@ -387,7 +464,7 @@ export const getFollowing = async (req, res) => {
     catch (err) {
         return res.status(500).json({ message: "Server error" });
     }
-};
+}
 
 
 // הצגת התראות של משתמש
@@ -404,7 +481,7 @@ export const getNotificationsByUser = async (req, res) => {
             .populate('notifications.fromUserId', 'userName profilePicture _id')
             .populate('notifications.postId', 'content _id')
             .populate('notifications.achievementId', 'title isCompleted _id')
-        // .populate('notifications.commentId', '_id');
+            .populate('notifications.boostId', 'title isCompleted _id')
 
         if (!user)
             return res.status(404).json({ message: "User not found" });

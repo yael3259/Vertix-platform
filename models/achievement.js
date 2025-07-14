@@ -46,6 +46,7 @@ const boostSchema = mongoose.Schema({
     startDate: { type: Date, default: new Date() },
     missedDay: { type: Boolean, default: false },
     isCompleted: { type: Boolean, default: false },
+    isPointsGiven: { type: Boolean, default: false },
     statusTable: { type: String, enum: ['completed', 'failed', 'in-progress'], default: 'in-progress' },
     notificationSent: { type: Boolean, default: false },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' }

@@ -154,8 +154,8 @@ export const createTrackingTable = (startDate, endDate) => {
 };
 
 
-// עדכון סימון יומי בטבלה
-export const updateTrackingTable = async (req, res) => {
+// עדכון סימון יומי בטבלת הישג
+export const updateTrackingTableAchievement = async (req, res) => {
     const { achievementId } = req.params;
     const { isMarkedToday } = req.body;
 
@@ -193,78 +193,52 @@ export const updateTrackingTable = async (req, res) => {
 };
 
 
-// Cron Job לריצה יומית בחצות
-// cron.schedule("0 0 * * *", async () => {
-//     // cron.schedule("*/5 * * * * *", async () => {
-//     console.log("Daily Cron initialized");
+// עדכון סימון יומי בטבלת בוסט
+export const updateTrackingTableBoost = async (req, res) => {
+    const { boostId } = req.params;
+    const { isMarkedToday } = req.body;
 
-//     const today = new Date();
-//     today.setHours(0, 0, 0, 0);
+    if (!mongoose.isValidObjectId(boostId))
+        return res.status(400).json({ type: "invalid id", message: "ID format is invalid" });
 
-//     try {
-//         const achievements = await achievementModel.find();
+    if (typeof isMarkedToday !== "boolean")
+        return res.status(400).json({ type: "invalid data", message: "isMarkedToday must be a boolean" });
 
-//         for (let achievement of achievements) {
-//             const achievementOfUser = achievement.userId;
+    try {
+        let boost = await boostModel.findById(boostId);
+        if (!boost)
+            return res.status(404).json({ type: "boost not found", message: "No boost found with this ID" });
 
-//             // חיפוש היום הנוכחי
-//             const todayEntry = achievement.trackingTable.find(e =>
-//                 new Date(e.day).getTime() === today.getTime()
-//             );
+        if (!boost.isActive)
+            return res.status(400).json({ type: "inactive boost", message: "Cannot update a non-active boost" });
 
-//             // אם היום קיים ועדיין לא סומן-מעדכן
-//             if (todayEntry && typeof todayEntry.isMarkedToday === 'undefined') {
-//                 todayEntry.isMarkedToday = false;
-//             }
+        let today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-//             const allMarked = achievement.trackingTable.every(e => e.isMarkedToday);
-//             const targetDate = new Date(achievement.targetDate);
-//             const targetDateReached = today >= targetDate;
+        let todayEntry = boost.trackingTable.find(entry =>
+            new Date(entry.day).getTime() === today.getTime()
+        );
 
-//             if (targetDateReached && allMarked) {
-//                 achievement.isCompleted = true;
-//                 achievement.statusTable = 'completed';
+        if (!todayEntry)
+            return res.status(404).json({ type: "not found", message: "Today not found in tracking table" });
 
-//                 if (!achievement.notificationSent) {
-//                     try {
-//                         const user = await userModel.findById(achievementOfUser);
+        todayEntry.isMarkedToday = isMarkedToday;
 
-//                         const newNotification = {
-//                             _id: new mongoose.Types.ObjectId(),
-//                             type: 'table',
-//                             notifiedUserId: achievementOfUser,
-//                             achievementId: achievement._id,
-//                             achievementTitle: achievement.title,
-//                             isRead: false,
-//                             creatingDate: new Date()
-//                         };
+        await boost.save();
 
-//                         user.notifications.push(newNotification);
-//                         await user.save();
-//                         achievement.notificationSent = true;
-//                     } catch (err) {
-//                         console.error(err.message);
-//                     }
-//                 }
+        return res.json(boost);
 
-//             } else if (targetDateReached && !allMarked) {
-//                 achievement.statusTable = 'failed';
-//             } else {
-//                 achievement.statusTable = 'in-progress';
-//             }
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ type: "server error", message: "Failed to update boost" });
+    }
+};
 
-//             await achievement.save();
-//         }
 
-//         console.log("Cron ran: achievements updated");
-//     } catch (err) {
-//         console.error("Cron failed:", err.message);
-//     }
-// });
-
+// Cron Job לריצה יומית בחצות (עבור הישג רגיל)
 cron.schedule("0 0 * * *", async () => {
     // cron.schedule("*/5 * * * * *", async () => {
-    console.log("Daily Cron initialized");
+    console.log("Daily achievement Cron initialized");
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -293,9 +267,9 @@ cron.schedule("0 0 * * *", async () => {
                 achievement.isCompleted = true;
                 achievement.statusTable = 'completed';
 
-                // ניקוד כפול 2 ממספר הימים בטבלה שהושלמה
+                // (נקודות לכל יום 10) טבלה שהושלמה מקבלת מספר נקודות כפול על כל יום
                 if (!achievement.isPointsGiven) {
-                    pointsToAdd = achievement.trackingTable.length * 2;
+                    pointsToAdd = achievement.trackingTable.length * 10;
 
                     const user = await userModel.findById(achievementOfUser);
 
@@ -323,9 +297,9 @@ cron.schedule("0 0 * * *", async () => {
             } else if (targetDateReached && !allMarked) {
                 achievement.statusTable = 'failed';
 
-                    // הוספת נקודה אחת לכל יום שסומן
+                // הוספת 5 נקודות לכל יום שסומן
                 if (!achievement.isPointsGiven) {
-                    pointsToAdd = achievement.trackingTable.filter(e => e.isMarkedToday).length;
+                    pointsToAdd = 5 * achievement.trackingTable.filter(e => e.isMarkedToday).length;
 
                     const user = await userModel.findById(achievementOfUser);
                     user.points = (user.points || 0) + pointsToAdd;
@@ -342,6 +316,106 @@ cron.schedule("0 0 * * *", async () => {
         }
 
         console.log("Cron ran: achievements updated");
+    } catch (err) {
+        console.error("Cron failed:", err.message);
+    }
+});
+
+
+// Cron Job לריצה יומית בחצות (עבור הישג בוסט)
+cron.schedule("0 0 * * *", async () => {
+    // cron.schedule("*/5 * * * * *", async () => {
+    console.log("Daily boost Cron initialized");
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    try {
+        const boosts = await boostModel.find();
+
+        for (let boost of boosts) {
+            if (boost.isActive) {
+
+                const boostOfUser = boost.userId;
+
+                const todayEntry = boost.trackingTable.find(e =>
+                    new Date(e.day).getTime() === today.getTime()
+                );
+
+                if (todayEntry && typeof todayEntry.isMarkedToday === 'undefined') {
+                    todayEntry.isMarkedToday = false;
+                }
+
+                if (todayEntry && todayEntry.isMarkedToday === false) {
+                    boost.statusTable = 'failed';
+                    boost.isCompleted = false;
+                    boost.missedDay = true;
+                    boost.isPointsGiven = true;
+                    boost.isActive = false;
+
+                    await boost.save();
+                    continue;
+                }
+
+                const allMarked = boost.trackingTable.every(e => e.isMarkedToday);
+                const targetDate = new Date(boost.targetDate);
+                const targetDateReached = today >= targetDate;
+
+                let pointsToAdd = 0;
+
+                if (targetDateReached && allMarked) {
+                    boost.isCompleted = true;
+                    boost.statusTable = 'completed';
+
+                    // (5*4=נקודות ליום 20) בוסט שהושלם מקבל כפול 4 נקודות על כל יום
+                    if (!boost.isPointsGiven) {
+                        pointsToAdd = boost.trackingTable.length * 20;
+
+                        const user = await userModel.findById(boostOfUser);
+
+                        const newNotification = {
+                            _id: new mongoose.Types.ObjectId(),
+                            type: 'boost',
+                            notifiedUserId: boostOfUser,
+                            boostId: boost._id,
+                            boostTitle: boost.title,
+                            isRead: false,
+                            // creatingDate: new Date()
+                            creatingDate: boost.targetDate
+                        };
+
+                        user.notifications.push(newNotification);
+
+                        // עדכון נקודות בסכמת משתמש
+                        user.points = (user.points || 0) + pointsToAdd;
+                        await user.save();
+
+                        boost.notificationSent = true;
+                        boost.isPointsGiven = true;
+                        boost.isActive = false;
+                    }
+                }
+                // איפוס נקודות ועדכון סטטוס הבוסט כ'נכשל' במקרה שיום עבר ולא סומן
+                else if (targetDateReached && !allMarked) {
+                    boost.statusTable = 'failed';
+
+                    if (!boost.isPointsGiven) {
+                        pointsToAdd = 0;
+
+                        const user = await userModel.findById(boostOfUser);
+                        user.points = (user.points || 0) + pointsToAdd;
+                        await user.save();
+
+                        boost.isPointsGiven = true;
+                        boost.isActive = false;
+                    }
+                } else {
+                    boost.statusTable = 'in-progress';
+                }
+                await boost.save();
+            }
+        }
+        console.log("Cron ran: boosts updated");
     } catch (err) {
         console.error("Cron failed:", err.message);
     }

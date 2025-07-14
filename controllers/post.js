@@ -101,7 +101,7 @@ export const addPost = async (req, res) => {
             backgroundColor,
             likes,
             comments,
-            postingDate: new Date()
+            postingDate: req.body.postingDate ? new Date(req.body.postingDate) : new Date()
         });
 
         await newPost.save();

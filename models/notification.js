@@ -6,13 +6,15 @@ import Joi from "joi";
 
 // סכמת התראה
 export const notificationSchema = new mongoose.Schema({
-    type: { type: String, enum: ['comment', 'follow', 'table'], required: true },
+    type: { type: String, enum: ['comment', 'follow', 'table', 'boost'], required: true },
     notifiedUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users', required: true },
     postId: { type: mongoose.Schema.Types.ObjectId, ref: 'Posts' },
     commentId: { type: mongoose.Schema.Types.ObjectId },
     commentText: { type: String },
     achievementId: { type: mongoose.Schema.Types.ObjectId, ref: 'Achievements' },
+    boostId: { type: mongoose.Schema.Types.ObjectId, ref: 'Boosts' },
     achievementTitle: { type: String },
+    boostTitle: { type: String },
     fromUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' },
     isRead: { type: Boolean, default: false },
     creatingDate: { type: Date, default: Date.now }

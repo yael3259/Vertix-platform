@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 import Joi from 'joi';
 import jwt from 'jsonwebtoken';
 import { notificationSchema } from "./notification.js";
-// import { boostSchema } from "./achievement.js";
 
 
 
@@ -22,13 +21,12 @@ export const userSchema = mongoose.Schema({
     gender: { type: String, required: true },
     profilePicture: { type: String, default: defaultPic },
     points: { type: Number, default: 0 },
-    tags: [String],
+    tags: [{ name: { type: String, enum: ['gold', 'silver', 'bronze'], required: true }, value: { type: Number, required: true, min: 0 } }],
     skills: { type: [String], default: [] },
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Users' }],
     notifications: [notificationSchema],
     favoritePosts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Posts' }]
 })
-// לעדכן את כל פונקציות הUSER בשדות החדשים שנוספו
 
 
 export const userValidator = (_user) => {

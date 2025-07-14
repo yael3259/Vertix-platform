@@ -1,5 +1,5 @@
 import express from "express";
-import { getAllUsers, getOneUser, addUser, login, deleteUser, getUsersByValue, resetPasswordUser, editUserDetails, getRandomUsers, addFriendToNetwork, getFollowing, getNotificationsByUser, markNotificationsAsRead, updateUserSkills } from "../controllers/user.js";
+import { getAllUsers, getOneUser, addUser, login, deleteUser, getUsersByValue, resetPasswordUser, editUserDetails, getRandomUsers, addFriendToNetwork, removeFriendFromNetwork, getFollowing, getNotificationsByUser, markNotificationsAsRead, updateUserSkills } from "../controllers/user.js";
 import { auth } from "../auth.js";
 
 
@@ -14,6 +14,7 @@ router.get("/notification/:userId", getNotificationsByUser);
 router.post("/", addUser);
 router.post("/login", login);
 router.post("/network/:userId", addFriendToNetwork);
+router.delete("/removeNetwork/:userId", removeFriendFromNetwork);
 // router.delete("/:userId", deleteUser);
 router.put("/", resetPasswordUser);
 router.put("/update/:userId", editUserDetails);
