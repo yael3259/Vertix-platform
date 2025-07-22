@@ -5,7 +5,7 @@ import Joi from "joi";
 
 export const sevenDaysForBoost = () => {
     const today = new Date();
-    const week = new Date(today.getTime() + 6 * 24 * 60 * 60 * 1000);
+    const week = new Date(today.getTime() + 1 * 24 * 60 * 60 * 1000);
     return week;
 }
 

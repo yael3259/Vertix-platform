@@ -1,5 +1,4 @@
-import { generateToken, userModel } from "../models/user.js";
-import bcrypt from "bcryptjs";
+import { userModel } from "../models/user.js";
 import mongoose from 'mongoose';
 import { achievementModel, boostModel, sevenDaysForBoost } from "../models/achievement.js";
 import cron from 'node-cron';
@@ -293,8 +292,8 @@ cron.schedule("0 0 * * *", async () => {
                     achievement.notificationSent = true;
                     achievement.isPointsGiven = true;
                 }
-
-            } else if (targetDateReached && !allMarked) {
+            }
+            else if (targetDateReached && !allMarked) {
                 achievement.statusTable = 'failed';
 
                 // הוספת 5 נקודות לכל יום שסומן
@@ -307,11 +306,10 @@ cron.schedule("0 0 * * *", async () => {
 
                     achievement.isPointsGiven = true;
                 }
-
-            } else {
+            }
+            else {
                 achievement.statusTable = 'in-progress';
             }
-
             await achievement.save();
         }
 
@@ -368,7 +366,7 @@ cron.schedule("0 0 * * *", async () => {
                     boost.statusTable = 'completed';
 
                     // (5*4=נקודות ליום 20) בוסט שהושלם מקבל כפול 4 נקודות על כל יום
-                    if (!boost.isPointsGiven) {
+                    if (!boost.isPointsGiven && !boost.notificationSent) {
                         pointsToAdd = boost.trackingTable.length * 20;
 
                         const user = await userModel.findById(boostOfUser);
@@ -408,6 +406,8 @@ cron.schedule("0 0 * * *", async () => {
 
                         boost.isPointsGiven = true;
                         boost.isActive = false;
+
+                        // await boost.save();
                     }
                 } else {
                     boost.statusTable = 'in-progress';

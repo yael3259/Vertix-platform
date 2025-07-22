@@ -5,6 +5,7 @@ import { auth } from "../auth.js";
 
 const router = express.Router();
 
+
 router.get("/getUsersWithSameLetters", getUsersByValue);
 router.get("/", getAllUsers);
 router.get("/random", getRandomUsers);
@@ -13,13 +14,13 @@ router.get("/following/:userId", getFollowing);
 router.get("/notification/:userId", getNotificationsByUser);
 router.post("/", addUser);
 router.post("/login", login);
-router.post("/network/:userId", addFriendToNetwork);
+router.post("/network/:userId", auth, addFriendToNetwork);
 router.delete("/removeNetwork/:userId", removeFriendFromNetwork);
-// router.delete("/:userId", deleteUser);
+// router.delete("/:userId", deleteUser); // הרשאת מנהל
 router.put("/", resetPasswordUser);
 router.put("/update/:userId", editUserDetails);
 router.put("/markNotifications/:userId", markNotificationsAsRead);
 router.put("/skills/:userId", updateUserSkills);
 
-
+// למנהל יש אפשרות לראות את כל המשתמשים, למחוק משתמשים ולראות את כל ההישגים
 export default router;

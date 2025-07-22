@@ -7,8 +7,6 @@ import { auth } from "../auth.js";
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
-
-
 const router = express.Router();
 
 
@@ -21,6 +19,8 @@ router.post("/comment/:postId", addComment);
 router.get("/comments/:postId", getCommentOfPostById);
 router.post("/favorites/:userId", addToFavoritePosts);
 router.get("/getFavorites/:userId", getFavoritePosts);
+
+// אין צורך להוסיף הרשאה אבל צריך להציג הודעה שרק משתמש מחובר יכול להגיב/לתת לייק/להוסיף פוסט למועדפים
 
 
 export default router;
