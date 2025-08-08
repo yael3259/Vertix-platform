@@ -108,7 +108,7 @@ export const addPost = async (req, res) => {
         return res.json(newPost);
     } catch (err) {
         console.log(err);
-        return res.status(500).json({ type: "server error", message: "Failed to add post" });
+        return res.status(500).json({ type: "server error", message: "הוספת פוסט נכשלה" });
     }
 };
 
@@ -140,7 +140,7 @@ export const toggleLikePost = async (req, res) => {
 
     } catch (err) {
         console.error("toggleLike error:", err);
-        res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({ type: "server error", message: "שגיאה בהוספת לייק" });
     }
 };
 
@@ -195,7 +195,7 @@ export const addComment = async (req, res) => {
         return res.status(200).json(addedComment);
 
     } catch (err) {
-        return res.status(500).json({ type: "server error", message: "Failed to add comment" });
+        return res.status(500).json({ type: "server error", message: "שגיאה בהוספת תגובה" });
     }
 };
 
@@ -233,7 +233,7 @@ export const addToFavoritePosts = async (req, res) => {
         }
 
         if (user.favoritePosts.includes(post._id)) {
-            return res.status(400).json({ type: "duplicate", message: "Post already in favorites" });
+            return res.status(400).json({ type: "duplicate", message: "הפוסט כבר סומן כמועדף" });
         }
 
         user.favoritePosts.push(post._id);
@@ -244,7 +244,7 @@ export const addToFavoritePosts = async (req, res) => {
     }
 
     catch (err) {
-        return res.status(500).json({ type: "server error", message: "Failed to add post to favorites" });
+        return res.status(500).json({ type: "server error", message: "הוספת הפוסט למועדפים נכשלה" });
     }
 }
 

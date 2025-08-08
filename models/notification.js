@@ -15,6 +15,7 @@ export const notificationSchema = new mongoose.Schema({
     boostId: { type: mongoose.Schema.Types.ObjectId, ref: 'Boosts' },
     achievementTitle: { type: String },
     boostTitle: { type: String },
+    addedPoints: { type: Number },
     fromUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' },
     isRead: { type: Boolean, default: false },
     creatingDate: { type: Date, default: Date.now }

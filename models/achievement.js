@@ -5,7 +5,7 @@ import Joi from "joi";
 
 export const sevenDaysForBoost = () => {
     const today = new Date();
-    const week = new Date(today.getTime() + 1 * 24 * 60 * 60 * 1000);
+    const week = new Date(today.getTime() + 6 * 24 * 60 * 60 * 1000);
     return week;
 }
 
@@ -26,12 +26,13 @@ export const achievementSchema = mongoose.Schema({
     targetDate: { type: Date, required: true },
     category: { type: String, required: true },
     trackingTable: [trackingTableSchema],
+    startDate: { type: Date, default: () => new Date() },
     isCompleted: { type: Boolean, default: false },
     isPointsGiven: { type: Boolean, default: false },
     statusTable: { type: String, enum: ['completed', 'failed', 'in-progress'], default: 'in-progress' },
     notificationSent: { type: Boolean, default: false },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' }
-});
+})
 
 
 // סכמת הישג מהיר (בוסט)
@@ -43,7 +44,7 @@ const boostSchema = mongoose.Schema({
     category: { type: String, required: true },
     trackingTable: [trackingTableSchema],
     isActive: { type: Boolean },
-    startDate: { type: Date, default: new Date() },
+    startDate: { type: Date, default: () => new Date() },
     missedDay: { type: Boolean, default: false },
     isCompleted: { type: Boolean, default: false },
     isPointsGiven: { type: Boolean, default: false },

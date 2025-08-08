@@ -18,7 +18,7 @@ export const getAllAchievements = async (req, res, next) => {
 
         return res.json(allAchievements);
     } catch (err) {
-        return res.status(400).json({ type: "invalid operation", message: "Sorry, cannot get achievements" });
+        return res.status(400).json({ type: "invalid operation", message: "could not get achievements" });
     }
 };
 
@@ -93,7 +93,7 @@ export const addAchievement = async (req, res) => {
 
     } catch (err) {
         console.error("Error adding achievement:", err);
-        return res.status(500).json({ type: "server_error", message: "Could not add achievement", error: err.message });
+        return res.status(500).json({ type: "server error", message: "הוספת ההישג נכשלה", error: err.message });
     }
 };
 
@@ -130,7 +130,7 @@ export const addBoost = async (req, res) => {
 
     } catch (err) {
         console.error("Error adding boost:", err);
-        return res.status(500).json({ type: "server error", message: "Could not add boost", error: err.message });
+        return res.status(500).json({ type: "server error", message: "הוספת הבוסט נכשלה" });
     }
 };
 
@@ -166,6 +166,7 @@ export const updateTrackingTableAchievement = async (req, res) => {
 
     try {
         let achievement = await achievementModel.findById(achievementId);
+
         if (!achievement)
             return res.status(404).json({ type: "achievement not found", message: "No achievement found with this ID" });
 
@@ -187,7 +188,7 @@ export const updateTrackingTableAchievement = async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ type: "server error", message: "Failed to update achievement" });
+        return res.status(500).json({ type: "server error", message: "עדכון ההישג נכשל. נסה/י שוב מאוחר יותר" });
     }
 };
 
@@ -229,14 +230,14 @@ export const updateTrackingTableBoost = async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ type: "server error", message: "Failed to update boost" });
+        return res.status(500).json({ type: "server error", message: "עדכון הבוסט נכשל. נסה/י שוב מאוחר יותר" });
     }
 };
 
 
 // Cron Job לריצה יומית בחצות (עבור הישג רגיל)
 cron.schedule("0 0 * * *", async () => {
-    // cron.schedule("*/5 * * * * *", async () => {
+    // cron.schedule("*/2 * * * * *", async () => {
     console.log("Daily achievement Cron initialized");
 
     const today = new Date();
@@ -278,6 +279,7 @@ cron.schedule("0 0 * * *", async () => {
                         notifiedUserId: achievementOfUser,
                         achievementId: achievement._id,
                         achievementTitle: achievement.title,
+                        addedPoints: pointsToAdd,
                         isRead: false,
                         creatingDate: new Date()
                     };
@@ -322,7 +324,7 @@ cron.schedule("0 0 * * *", async () => {
 
 // Cron Job לריצה יומית בחצות (עבור הישג בוסט)
 cron.schedule("0 0 * * *", async () => {
-    // cron.schedule("*/5 * * * * *", async () => {
+    // cron.schedule("*/2 * * * * *", async () => {
     console.log("Daily boost Cron initialized");
 
     const today = new Date();
@@ -377,8 +379,8 @@ cron.schedule("0 0 * * *", async () => {
                             notifiedUserId: boostOfUser,
                             boostId: boost._id,
                             boostTitle: boost.title,
+                            addedPoints: pointsToAdd,
                             isRead: false,
-                            // creatingDate: new Date()
                             creatingDate: boost.targetDate
                         };
 
@@ -406,8 +408,6 @@ cron.schedule("0 0 * * *", async () => {
 
                         boost.isPointsGiven = true;
                         boost.isActive = false;
-
-                        // await boost.save();
                     }
                 } else {
                     boost.statusTable = 'in-progress';
@@ -427,18 +427,15 @@ export const getAchievementByUser = async (req, res) => {
     const userId = req.user._id;
     const achievementId = req.params.achievementId;
 
-    console.log('achievementId: ', achievementId);
-    console.log('userId: ', userId);
-
     if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(achievementId)) {
-        return res.status(400).json({ type: "not_valid_id", message: "One or more IDs are not in the correct format" });
+        return res.status(400).json({ type: "not valid id", message: "One or more IDs are not in the correct format" });
     }
 
     try {
         const achievement = await achievementModel.findOne({ _id: achievementId, userId });
 
         if (!achievement) {
-            return res.status(404).json({ type: "not_found", message: "Achievement not found for this user" });
+            return res.status(404).json({ type: "not found", message: "Achievement not found for this user" });
         }
 
         return res.json({ achievement });

@@ -75,7 +75,7 @@ export const addUser = async (req, res) => {
         const sameUser = await userModel.findOne({ email: email });
 
         if (sameUser) {
-            return res.status(409).json({ type: "same user", message: "user with such email already exist" });
+            return res.status(409).json({ type: "same user", message: "האימייל שהוזן כבר בשימוש. אנא נסה/י כתובת אחרת" });
         }
 
         const ChangingUserStatus = (userName) => {
@@ -128,7 +128,7 @@ export const addUser = async (req, res) => {
     }
     catch (err) {
         console.error(err);
-        return res.status(400).json({ type: "invalid operations", message: "Could not add user" });
+        return res.status(400).json({ type: "invalid operations", message: "ההרשמה נכשלה" });
     }
 }
 
@@ -145,14 +145,14 @@ export const login = async (req, res) => {
     try {
         const user = await userModel.findOne({ email: email });
         if (!user) {
-            return res.status(401).json({ type: "user is undefined", message: "one or more details are invalide" });
+            return res.status(401).json({ type: "user is undefined", message: "משתמש לא קיים" });
         }
 
         const passwordMatch = await bcrypt.compare(password, user.password);
         console.log("Password match:", passwordMatch);
 
         if (!passwordMatch) {
-            return res.status(404).json({ type: "user is undefined", message: "password is invalide" });
+            return res.status(404).json({ type: "user is undefined", message: "סיסמה שגויה" });
         }
 
         let token = generateToken(user._id, user.userName, user.gender, user.role);
@@ -178,7 +178,7 @@ export const login = async (req, res) => {
 
     catch (err) {
         console.log(err);
-        return res.status(400).json({ type: "invalid operations", message: "Could not log in user" });
+        return res.status(400).json({ type: "invalid operations", message: "ההתחברות נכשלה" });
     }
 }
 
@@ -194,16 +194,16 @@ export const deleteUser = async (req, res) => {
         }
 
         const user = await userModel.findById(userId);
+
         if (!user) {
             return res.status(404).json({ type: "undefined user", message: "This user is undefined" });
         }
 
         await userModel.findByIdAndDelete(userId);
-        return res.json({ message: "User deleted successfully", user });
 
     } catch (err) {
         console.error("Error details:", { message: err.message, stack: err.stack, code: err.code });
-        return res.status(500).json({ type: "invalid operation", message: err.message });
+        return res.status(500).json({ type: "invalid operation", message: "מחיקת המשתמש נכשלה" });
     }
 }
 
@@ -216,17 +216,15 @@ export const resetPasswordUser = async (req, res) => {
         const user = await userModel.findOne({ email: email })
 
         if (!user)
-            return res.status(404).json({ type: "user is undefined", message: "one or more ditails are invalide" })
-        console.log("user found!");
+            return res.status(404).json({ type: "user is undefined", message: "ditails are invalide" })
 
         user.password = await bcrypt.hash(password, 15);
 
         await user.save();
-        res.json({ message: "Password reset successfully" })
 
     } catch (err) {
         console.error("Error details:", { message: err.message, stack: err.stack, code: err.code, });
-        return res.status(500).json({ type: "invalid operation", message: err.message });
+        return res.status(500).json({ type: "invalid operation", message: "איפוס הסיסמה נכשל" });
     }
 }
 
@@ -260,7 +258,7 @@ export const editUserDetails = async (req, res) => {
 
     } catch (err) {
         console.log(err);
-        res.status(400).json({ type: "invalid operation", massage: "could not edit user" });
+        res.status(400).json({ type: "invalid operation", massage: "עדכון הפרופיל נכשל" });
     }
 }
 
@@ -332,7 +330,7 @@ export const updateUserSkills = async (req, res) => {
         return res.json(user);
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ type: "server error", message: "failed to update user details" });
+        return res.status(500).json({ type: "server error", message: "הוספת כישור נכשלה" });
     }
 }
 
@@ -371,11 +369,11 @@ export const addFriendToNetwork = async (req, res) => {
         }
 
         if (currentUser._id.equals(newUserToAdd._id)) {
-            return res.status(400).json({ message: "user can't add himself" });
+            return res.status(400).json({ message: "לא ניתן לעקוב אחרי הפרופיל שלך" });
         }
 
         if (currentUser.following.includes(newUserToAdd._id)) {
-            return res.status(400).json({ message: "user already follows this user" });
+            return res.status(400).json({ message: `${newUserToAdd.userName} כבר נמצא/ת ברשימת החברים שלך` });
         }
 
         currentUser.following.push(newUserToAdd._id);
@@ -398,11 +396,9 @@ export const addFriendToNetwork = async (req, res) => {
             console.error(err.message);
         }
 
-        return res.json({ message: "Friend added successfully", user: currentUser });
-
     } catch (err) {
         console.error("Error adding friend:", err);
-        return res.status(500).json({ message: "Server error" });
+        return res.status(500).json({ type: "server error", message: "הוספת חבר נכשלה" });
     }
 }
 
@@ -430,11 +426,11 @@ export const removeFriendFromNetwork = async (req, res) => {
 
         await currentUser.save();
 
-        return res.json({ message: "Friend removed successfully", user: currentUser });
+        return res.status(200).json({ message: "Friend removed successfully", user: currentUser });
 
     } catch (err) {
         console.error("Error removing friend:", err);
-        return res.status(500).json({ message: "Server error" });
+        return res.status(500).json({ type: "server error", message: "הסרת חבר נכשלה" });
     }
 }
 
@@ -480,8 +476,8 @@ export const getNotificationsByUser = async (req, res) => {
             .select('notifications')
             .populate('notifications.fromUserId', 'userName profilePicture _id')
             .populate('notifications.postId', 'content _id')
-            .populate('notifications.achievementId', 'title isCompleted _id')
-            .populate('notifications.boostId', 'title isCompleted _id')
+            .populate('notifications.achievementId', 'title addedPoints isCompleted _id')
+            .populate('notifications.boostId', 'title addedPoints isCompleted _id')
 
         if (!user)
             return res.status(404).json({ message: "User not found" });
