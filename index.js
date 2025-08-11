@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { config } from "dotenv";
 import { connectToDb } from "./DB/connectToDb.js";
 import userRouter from "./routes/user.js";
 import achievementRouter from "./routes/achievement.js";
