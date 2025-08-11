@@ -28,14 +28,13 @@ app.use(cors({
     optionsSuccessStatus: 200
 }));
 
+app.get("/", (req, res) => {
+    res.send("Welcome to the server! The API is running.");
+});
 
 app.use("/domain/api/user", userRouter);
 app.use("/domain/api/achievement", achievementRouter);
 app.use("/domain/api/post", postRouter);
-
-app.get("/", (req, res) => {
-    res.send("Welcome to the server! The API is running.");
-});
 
 config();
 connectToDb();
