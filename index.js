@@ -15,13 +15,13 @@ const app = express();
 
 app.use(express.json());
 
-app.use(cors({
-    methods: "POST, GET, PUT, DELETE",
-    origin: "*"
-}));
+// app.use(cors({
+//     methods: "POST, GET, PUT, DELETE",
+//     origin: "*"
+// }));
 
 app.use(cors({
-    origin: "https://fitnet-site.vercel.app",
+    origin: "https://vertix-rose.vercel.app",
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     preflightContinue: true,
@@ -32,6 +32,10 @@ app.use(cors({
 app.use("/domain/api/user", userRouter);
 app.use("/domain/api/achievement", achievementRouter);
 app.use("/domain/api/post", postRouter);
+
+app.get("/", (req, res) => {
+    res.send("Welcome to the server! The API is running.");
+});
 
 config();
 connectToDb();
