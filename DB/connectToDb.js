@@ -1,10 +1,11 @@
 import mongoose from "mongoose";
 
 
-// התחברות למסד נתונים לוקאלי
+// התחברות למסד נתונים לוקאלי/מקוון
 export const connectToDb = async () => {
     try {
-        let connect = await mongoose.connect("mongodb://0.0.0.0:27017/vertixDB");
+        // await mongoose.connect(process.env.DB_URI || "mongodb://0.0.0.0:27017/vertixDB");
+        await mongoose.connect(process.env.MONGO_URI);
         console.log("mongo db connected!")
     } catch (err) {
         console.log(err);

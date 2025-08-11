@@ -12,10 +12,20 @@ import postRouter from "./routes/post.js";
 dotenv.config();
 
 const app = express();
+
 app.use(express.json());
+
 app.use(cors({
     methods: "POST, GET, PUT, DELETE",
     origin: "*"
+}));
+
+app.use(cors({
+    origin: "https://fitnet-site.vercel.app",
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    preflightContinue: true,
+    optionsSuccessStatus: 200
 }));
 
 
@@ -27,4 +37,4 @@ config();
 connectToDb();
 
 const PORT = process.env.PORT || 5000
-app.listen(PORT, ()=> {`server running on port ${PORT}`});
+app.listen(PORT, ()=> console.log(`server running on port ${PORT}`));
