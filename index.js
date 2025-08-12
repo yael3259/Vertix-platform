@@ -15,22 +15,29 @@ const app = express();
 app.use(express.json());
 
 
-const allowedOrigins = [
-  "https://vertix-dev.vercel.app",
-  "http://localhost:3000"
-];
+// const allowedOrigins = [
+//   "https://vertix-dev.vercel.app",
+//   "http://localhost:3000"
+// ];
 
+// app.use(cors({
+//   origin: function(origin, callback) {
+//     if (!origin) return callback(null, true);
+//     if (allowedOrigins.indexOf(origin) === -1) {
+//       return callback(new Error('Not allowed by CORS'), false);
+//     }
+//     return callback(null, true);
+//   },
+//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
+//   allowedHeaders: ['Content-Type', 'Authorization', 'x-access-token']
+// }));
 app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      return callback(new Error('Not allowed by CORS'), false);
-    }
-    return callback(null, true);
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-access-token']
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-access-token"]
 }));
+
+app.options("*", cors());
 
 
 app.get("/", (req, res) => {
@@ -44,4 +51,4 @@ app.use("/domain/api/post", postRouter);
 connectToDb();
 
 const PORT = process.env.PORT || 5000
-app.listen(PORT, ()=> console.log(`server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`server running on port ${PORT}`));

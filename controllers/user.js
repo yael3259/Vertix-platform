@@ -378,6 +378,7 @@ export const addFriendToNetwork = async (req, res) => {
 
         currentUser.following.push(newUserToAdd._id);
         await currentUser.save();
+        console.log("success adding friend:", currentUser);
 
         try {
             const newNotification = {
@@ -395,6 +396,8 @@ export const addFriendToNetwork = async (req, res) => {
         } catch (err) {
             console.error(err.message);
         }
+
+        return res.status(200).json({ type: "user added", message: "Friend added successfully" });
 
     } catch (err) {
         console.error("Error adding friend:", err);

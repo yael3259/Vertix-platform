@@ -241,9 +241,8 @@ export const addToFavoritePosts = async (req, res) => {
         await user.save();
 
         return res.status(200).json({ favoritePosts: user.favoritePosts });
-    }
-
-    catch (err) {
+        
+    } catch (err) {
         return res.status(500).json({ type: "server error", message: "הוספת הפוסט למועדפים נכשלה" });
     }
 }
