@@ -14,13 +14,23 @@ const app = express();
 
 app.use(express.json());
 
+const allowedOrigins = [
+  "https://vertix-zeta.vercel.app",
+  "http://localhost:3000"
+];
+
 app.use(cors({
-    origin: "https://vertix-zeta.vercel.app",
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    preflightContinue: true,
-    optionsSuccessStatus: 200
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(new Error('Not allowed by CORS'), false);
+    }
+    return callback(null, true);
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 
 app.get("/", (req, res) => {
     res.send("Welcome to the server! The API is running.");
