@@ -14,23 +14,12 @@ const app = express();
 
 app.use(express.json());
 
-
-// const allowedOrigins = [
-//   "https://vertix-dev.vercel.app",
-//   "http://localhost:3000"
-// ];
-
 // app.use(cors({
-//   origin: function(origin, callback) {
-//     if (!origin) return callback(null, true);
-//     if (allowedOrigins.indexOf(origin) === -1) {
-//       return callback(new Error('Not allowed by CORS'), false);
-//     }
-//     return callback(null, true);
-//   },
+//   origin:"https://vertix-dev.vercel.app",
 //   methods: ['GET', 'POST', 'PUT', 'DELETE'],
 //   allowedHeaders: ['Content-Type', 'Authorization', 'x-access-token']
 // }));
+
 app.use(cors({
     origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -38,7 +27,6 @@ app.use(cors({
 }));
 
 app.options("*", cors());
-
 
 app.get("/", (req, res) => {
     res.send("server is running");
