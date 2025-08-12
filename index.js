@@ -14,8 +14,9 @@ const app = express();
 
 app.use(express.json());
 
+
 const allowedOrigins = [
-  "https://vertix-zeta.vercel.app",
+  "https://vertix-dev.vercel.app",
   "http://localhost:3000"
 ];
 
@@ -33,7 +34,7 @@ app.use(cors({
 
 
 app.get("/", (req, res) => {
-    res.send("Welcome to the server! The API is running.");
+    res.send("server is running");
 });
 
 app.use("/domain/api/user", userRouter);
