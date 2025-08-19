@@ -14,12 +14,15 @@ export const getAllPosts = async (req, res) => {
             .sort({ postingDate: -1 })
             .skip((page - 1) * perPage)
             .limit(perPage)
-            .populate("userId", "userName profilePicture")
+            .populate("userId", "userName profilePicture points")
             .populate("comments.userId", "userName profilePicture");
 
         return res.json(allPosts);
     } catch (err) {
-        return res.status(400).json({ type: "invalid operation", message: "Could not get posts" });
+        return res.status(400).json({
+            type: "invalid operation",
+            message: "Could not get posts"
+        });
     }
 }
 
@@ -241,7 +244,7 @@ export const addToFavoritePosts = async (req, res) => {
         await user.save();
 
         return res.status(200).json({ favoritePosts: user.favoritePosts });
-        
+
     } catch (err) {
         return res.status(500).json({ type: "server error", message: "הוספת הפוסט למועדפים נכשלה" });
     }
