@@ -186,7 +186,6 @@ export const login = async (req, res) => {
 // מחיקת משתמש
 export const deleteUser = async (req, res) => {
     const { userId } = req.params;
-    console.log("deleteUser function called with ID:", userId);
 
     try {
         if (!mongoose.isValidObjectId(userId)) {
@@ -202,7 +201,6 @@ export const deleteUser = async (req, res) => {
         await userModel.findByIdAndDelete(userId);
 
     } catch (err) {
-        console.error("Error details:", { message: err.message, stack: err.stack, code: err.code });
         return res.status(500).json({ type: "invalid operation", message: "מחיקת המשתמש נכשלה" });
     }
 }
@@ -331,6 +329,37 @@ export const updateUserSkills = async (req, res) => {
     } catch (err) {
         console.error(err);
         return res.status(500).json({ type: "server error", message: "הוספת כישור נכשלה" });
+    }
+}
+
+
+// הוספת נקודות מזכייה בגלגל המזל
+export const updateUserPoints = async (req, res) => {
+    const { userId } = req.params;
+    const { pointsToAdd } = req.body;
+
+    if (!mongoose.isValidObjectId(userId))
+        return res.status(400).json({ type: "not valid id", message: "id is not in the right format" });
+
+    if (typeof pointsToAdd !== "number") {
+        return res.status(400).json({ type: "type error", message: "points must be of type number" });
+    }
+
+    try {
+        const user = await userModel.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ type: "user not found", message: "user not found" });
+        }
+
+        user.points += pointsToAdd;
+
+        await user.save();
+        
+        return res.status(200).json({ type: "success", message: "Points updated successfully" });
+
+    } catch (err) {
+        return res.status(500).json({ type: "server error", message: "could not update points" });
     }
 }
 

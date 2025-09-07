@@ -116,6 +116,58 @@ export const addPost = async (req, res) => {
 };
 
 
+// מחיקת פוסט
+export const deletePost = async (req, res) => {
+    const { postId } = req.params;
+
+    try {
+        const post = await postModel.findById(postId);
+
+        if (!post)
+            return res.status(404).json({ message: "post not found" });
+
+        await postModel.findByIdAndDelete(postId);
+
+        return res.status(200).json({ type: "success", message: "post deleted successfully" });
+    }
+
+    catch (err) {
+        return res.status(500).json({ type: "server error", message: "מחיקת פוסט נכשלה" });
+    }
+}
+
+
+// עריכת פוסט
+export const editPost = async (req, res) => {
+    const { postId } = req.params;
+    const { content } = req.body;
+
+    if (!postId || !mongoose.Types.ObjectId.isValid(postId)) {
+        return res.status(400).json({ message: "invalid post id" });
+    }
+
+    if (!content || typeof content !== "string") {
+        return res.status(400).json({ message: "format error" });
+    }
+
+    try {
+        const updated = await postModel.findByIdAndUpdate(
+            postId,
+            { content: content.trim() },
+        );
+
+        if (!updated) {
+            return res.status(404).json({ message: "post not found" });
+        }
+
+        return res.status(200).json({ message: "post updated successfully", post: updated });
+
+    } catch (err) {
+        return res.status(500).json({ type: "server error", message: "שגיאה בעדכון הפוסט"});
+    }
+};
+
+
 // הוספת/ הסרת לייק בפוסט
 export const toggleLikePost = async (req, res) => {
     const { userId } = req.params;
@@ -124,7 +176,9 @@ export const toggleLikePost = async (req, res) => {
 
     try {
         const post = await postModel.findById(postId);
-        if (!post) return res.status(404).json({ error: "Post not found" });
+
+        if (!post)
+            return res.status(404).json({ error: "Post not found" });
 
         console.log("post.likes before:", post.likes);
         post.likes = post.likes || [];

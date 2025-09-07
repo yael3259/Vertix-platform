@@ -1,6 +1,23 @@
 import express from "express";
-import { getAllUsers, getOneUser, addUser, login, deleteUser, getUsersByValue, resetPasswordUser, editUserDetails, getRandomUsers, addFriendToNetwork, removeFriendFromNetwork, getFollowing, getNotificationsByUser, markNotificationsAsRead, updateUserSkills } from "../controllers/user.js";
 import { auth } from "../auth.js";
+import {
+    getAllUsers,
+    getOneUser,
+    addUser,
+    login,
+    deleteUser,
+    getUsersByValue,
+    resetPasswordUser,
+    editUserDetails,
+    updateUserPoints,
+    getRandomUsers,
+    addFriendToNetwork,
+    removeFriendFromNetwork,
+    getFollowing,
+    getNotificationsByUser,
+    markNotificationsAsRead,
+    updateUserSkills
+} from "../controllers/user.js";
 
 
 const router = express.Router();
@@ -17,6 +34,7 @@ router.post("/login", login);
 router.post("/network/:userId", auth, addFriendToNetwork);
 router.delete("/removeNetwork/:userId", removeFriendFromNetwork);
 // router.delete("/:userId", deleteUser); // הרשאת מנהל
+router.put("/updatePoints/:userId", updateUserPoints);
 router.put("/", resetPasswordUser);
 router.put("/update/:userId", editUserDetails);
 router.put("/markNotifications/:userId", markNotificationsAsRead);

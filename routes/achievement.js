@@ -1,6 +1,16 @@
 import express from "express";
-import { getAllAchievements, addAchievement, addBoost, getUserAchievements, getUserBoosts, updateTrackingTableAchievement, updateTrackingTableBoost, getAchievementByUser, getBoostByUser } from "../controllers/achievement.js";
 import { auth } from "../auth.js";
+import {
+    getAllAchievements,
+    addAchievement,
+    addBoost,
+    getUserAchievements,
+    getUserBoosts,
+    updateTrackingTableAchievement,
+    updateTrackingTableBoost,
+    getAchievementByUser,
+    getBoostByUser
+} from "../controllers/achievement.js";
 
 
 

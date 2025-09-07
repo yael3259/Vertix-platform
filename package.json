@@ -25,6 +25,7 @@
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
     "nodemon": "^3.0.2"
   },
   "keywords": [],
