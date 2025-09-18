@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
+import sharp from "sharp";
 import { postModel } from "../models/post.js";
 import { userModel } from '../models/user.js';
+import fs from 'fs';
 
 
 
@@ -85,22 +87,29 @@ export const addPost = async (req, res) => {
         return res.status(400).json({ type: "missing parameters", message: "enter category and content" });
 
     try {
-        let jimagePost = '';
+        let imgPost = '';
+
         if (imagePost) {
-            jimagePost = imagePost;
+            imgPost = imagePost;
         }
 
         if (req.file) {
-            const base64Image = req.file.buffer.toString('base64');
-            const mimeType = req.file.mimetype;
-            jimagePost = `data:${mimeType};base64,${base64Image}`;
+            const fileName = `${Date.now()}_output.jpg`;
+            const filePath = `uploads/${fileName}`;
+
+            await sharp(req.file.buffer)
+                .resize({ width: 500, withoutEnlargement: true })
+                .jpeg({ quality: 70 })
+                .toFile(filePath);
+
+            imgPost = `${process.env.BACKEND_HOST}/uploads/${fileName}`;
         }
 
         let newPost = new postModel({
             userId: userId,
             category,
             content,
-            imagePost: jimagePost,
+            imagePost: imgPost,
             backgroundColor,
             likes,
             comments,
@@ -108,7 +117,9 @@ export const addPost = async (req, res) => {
         });
 
         await newPost.save();
-        return res.json(newPost);
+
+        return res.status(200).json({ type: "success", message: "post added successfully" });
+
     } catch (err) {
         console.log(err);
         return res.status(500).json({ type: "server error", message: "הוספת פוסט נכשלה" });
@@ -163,7 +174,7 @@ export const editPost = async (req, res) => {
         return res.status(200).json({ message: "post updated successfully", post: updated });
 
     } catch (err) {
-        return res.status(500).json({ type: "server error", message: "שגיאה בעדכון הפוסט"});
+        return res.status(500).json({ type: "server error", message: "שגיאה בעדכון הפוסט" });
     }
 };
 

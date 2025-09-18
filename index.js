@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
 import { connectToDb } from "./DB/connectToDb.js";
 import userRouter from "./routes/user.js";
 import achievementRouter from "./routes/achievement.js";
@@ -14,12 +15,6 @@ const app = express();
 
 app.use(express.json());
 
-// app.use(cors({
-//   origin:"https://vertix-dev.vercel.app",
-//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-//   allowedHeaders: ['Content-Type', 'Authorization', 'x-access-token']
-// }));
-
 app.use(cors({
     origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -27,6 +22,9 @@ app.use(cors({
 }));
 
 app.options("*", cors());
+
+const uploadsPath = path.join(process.cwd(), 'uploads');
+app.use('/uploads', express.static(uploadsPath));
 
 app.get("/", (req, res) => {
     res.send("server is running");

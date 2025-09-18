@@ -6,6 +6,7 @@ import {
     addUser,
     login,
     deleteUser,
+    usersDisplayInTable,
     getUsersByValue,
     resetPasswordUser,
     editUserDetails,
@@ -16,13 +17,13 @@ import {
     getFollowing,
     getNotificationsByUser,
     markNotificationsAsRead,
-    updateUserSkills
+    updateUserSkills,
 } from "../controllers/user.js";
 
 
 const router = express.Router();
 
-
+router.get("/tableDisplay", usersDisplayInTable);
 router.get("/getUsersWithSameLetters", getUsersByValue);
 router.get("/", getAllUsers);
 router.get("/random", getRandomUsers);
@@ -33,12 +34,13 @@ router.post("/", addUser);
 router.post("/login", login);
 router.post("/network/:userId", auth, addFriendToNetwork);
 router.delete("/removeNetwork/:userId", removeFriendFromNetwork);
-// router.delete("/:userId", deleteUser); // הרשאת מנהל
+router.delete("/:userId", deleteUser);
 router.put("/updatePoints/:userId", updateUserPoints);
 router.put("/", resetPasswordUser);
 router.put("/update/:userId", editUserDetails);
 router.put("/markNotifications/:userId", markNotificationsAsRead);
 router.put("/skills/:userId", updateUserSkills);
+
 
 // למנהל יש אפשרות לראות את כל המשתמשים, למחוק משתמשים ולראות את כל ההישגים
 export default router;

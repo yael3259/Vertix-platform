@@ -9,16 +9,77 @@ import cron from 'node-cron';
 // הצגת כל המשתמשים
 export const getAllUsers = async (req, res) => {
     try {
-        // let allUsers = await userModel.find({},
-        //     'userName nickname email role enterDate gender profilePicture points tags skills following notifications');
         let allUsers = await userModel.find({},
             'userName nickname email role enterDate gender profilePicture points tags skills following notifications'
-        ).sort({ points: -1 });
+        ).sort({ points: -1 })
+            .populate()
 
         return res.json(allUsers);
     }
     catch (err) {
         return res.status(500).json({ type: "server error", message: "Could not retrieve users" });
+    }
+}
+
+
+// הצגת כל המשתמשים בתוספת שדות (פוסטים, הישגים ובוסטים)
+export const usersDisplayInTable = async (req, res) => {
+    try {
+        const users = await userModel.aggregate([
+            {
+                $lookup: { // פוסטים
+                    from: "posts",
+                    localField: "_id",
+                    foreignField: "userId",
+                    as: "userPosts"
+                }
+            },
+            {
+                $lookup: { // הישגים
+                    from: "achievements",
+                    localField: "_id",
+                    foreignField: "userId",
+                    as: "userAchievements"
+                }
+            },
+            {
+                $lookup: { // בוסטים
+                    from: "boosts",
+                    localField: "_id",
+                    foreignField: "userId",
+                    as: "userBoosts"
+                }
+            },
+            {
+                $addFields: {
+                    postCount: { $size: "$userPosts" },
+                    achievementBoostCount: {
+                        $add: [{ $size: "$userAchievements" }, { $size: "$userBoosts" }]
+                    }
+                }
+            },
+            {
+                $project: {
+                    userName: 1,
+                    nickname: 1,
+                    email: 1,
+                    role: 1,
+                    enterDate: 1,
+                    points: 1,
+                    tags: 1,
+                    following: 1,
+                    postCount: 1,
+                    achievementBoostCount: 1
+                }
+            },
+            { $sort: { enterDate: -1 } }
+        ]);
+
+        res.json(users);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ type: "server error", message: "Could not retrieve users" });
     }
 }
 
@@ -200,6 +261,8 @@ export const deleteUser = async (req, res) => {
 
         await userModel.findByIdAndDelete(userId);
 
+        return res.status(200).json({ type: "success", message: "User deleted successfully" });
+
     } catch (err) {
         return res.status(500).json({ type: "invalid operation", message: "מחיקת המשתמש נכשלה" });
     }
@@ -219,6 +282,8 @@ export const resetPasswordUser = async (req, res) => {
         user.password = await bcrypt.hash(password, 15);
 
         await user.save();
+
+        return res.status(200).json({ type: "success", message: "password successfully changed" });
 
     } catch (err) {
         console.error("Error details:", { message: err.message, stack: err.stack, code: err.code, });
@@ -325,7 +390,9 @@ export const updateUserSkills = async (req, res) => {
         });
 
         await user.save();
-        return res.json(user);
+
+        return res.status(200).json({ type: "success", message: "skill added successfully" });
+
     } catch (err) {
         console.error(err);
         return res.status(500).json({ type: "server error", message: "הוספת כישור נכשלה" });
@@ -355,7 +422,7 @@ export const updateUserPoints = async (req, res) => {
         user.points += pointsToAdd;
 
         await user.save();
-        
+
         return res.status(200).json({ type: "success", message: "Points updated successfully" });
 
     } catch (err) {
