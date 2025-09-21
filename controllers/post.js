@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import sharp from "sharp";
 import { postModel } from "../models/post.js";
 import { userModel } from '../models/user.js';
-import fs from 'fs';
+
 
 
 
@@ -76,9 +76,6 @@ export const addPost = async (req, res) => {
     let { category, content, imagePost, backgroundColor, likes, comments } = req.body;
     const userId = req.user._id;
 
-    console.log('userId: ', userId);
-    console.log('post: ', req.body);
-
     if (!mongoose.isValidObjectId(userId)) {
         return res.status(400).json({ type: "not valid id", message: "ID is not the right format" });
     }
@@ -96,12 +93,21 @@ export const addPost = async (req, res) => {
         if (req.file) {
             const fileName = `${Date.now()}_output.jpg`;
             const filePath = `uploads/${fileName}`;
+            const maxSize = 2 * 1024 * 1024; // 2MB
 
             await sharp(req.file.buffer)
                 .resize({ width: 500, withoutEnlargement: true })
                 .jpeg({ quality: 70 })
                 .toFile(filePath);
 
+            const { size } = await fs.promises.stat(filePath);
+
+            if (size > maxSize) {
+                await fs.promises.unlink(filePath); // מחיקת התמונה מהתיקיה
+
+                return res.status(400).json({ type: "failed", message: "תמונה גדולה מידי. בחר/י תמונה אחרת" });
+            }
+            
             imgPost = `${process.env.BACKEND_HOST}/uploads/${fileName}`;
         }
 
