@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import sharp from "sharp";
 import { postModel } from "../models/post.js";
 import { userModel } from '../models/user.js';
-
+import fs from "fs";
 
 
 

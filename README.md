@@ -133,15 +133,24 @@
     ```bash
     npm install
     ```
-3.  **Configure `.env` file**
-    Create a new file named `.env` in the project root. This file will store your environment variables. Be sure to replace the placeholder values with your actual data:
+3.  **Configure `.env` file**  
+    Copy the template below into a new file named `.env` in the project root (or rename `.env.example` to `.env`) and replace the placeholders with your actual values:  
+
+    ```env
+    # Security
+    SECRET_JWT=<JWT_SECRET_KEY>
+
+    # Database
+    DB_URI=<PRIMARY_MONGODB_URI>
+    MONGO_URI=<SECONDARY_MONGODB_URI>
+
+    # Server
+    BACKEND_HOST=<BACKEND_BASE_URL>
+
+    # Application
+    ROLE_CODE=<USER_ROLE_CODE>
     ```
-    SECRET_JWT=your_super_secret_key
-    DB_URI="your_mongodb_connection_string"
-    MONGO_URI="your_mongodb_connection_string"
-    BACKEND_HOST="http://localhost:5000"
-    ROLE_CODE=your_role_code
-    ```
+
 4.  **Start the Server**
     To run the server, use one of the following commands:
     * **Development mode (recommended):**
